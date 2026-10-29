@@ -1,0 +1,370 @@
+{
+  "id": "f1-scoreboard",
+  "name": "F1 Scoreboard",
+  "version": "1.10.1",
+  "author": "ChuckBuilds",
+  "class_name": "F1ScoreboardPlugin",
+  "entry_point": "manager.py",
+  "repo": "https://github.com/ChuckBuilds/ledmatrix-plugins",
+  "branch": "main",
+  "plugin_path": "plugins/f1-scoreboard",
+  "description": "Formula 1 racing plugin showing driver/constructor standings with championship gap bars, race results, qualifying breakdowns, practice standings, sprint results, upcoming races, and race calendar. Features favorite driver/team spotlight cards, live session detection with auto-refresh, and team-colored displays.",
+  "category": "sports",
+  "tags": [
+    "f1",
+    "formula1",
+    "racing",
+    "motorsport",
+    "sports",
+    "scoreboard"
+  ],
+  "display_modes": [
+    "f1_driver_standings",
+    "f1_constructor_standings",
+    "f1_recent_races",
+    "f1_upcoming",
+    "f1_qualifying",
+    "f1_practice",
+    "f1_sprint",
+    "f1_calendar"
+  ],
+  "versions": [
+    {
+      "version": "1.10.1",
+      "released": "2026-10-02",
+      "ledmatrix_min_version": "3.6.1",
+      "notes": "customization.auto_scale now does what it says for a TTF font you pick: on, the font size is scaled with the panel and snapped to the font's pixel grid; off, the exact size is used. The web UI saves font_size with every config, and a set font_size bypassed auto_scale entirely, while with no font_size auto_scale off still scaled. Blank font fields (the default bitmap fonts) are unchanged. README: the font table listed PressStart2P/4x6-font as defaults (the default is blank, auto-picked BDF) and omitted the six bundled BDF fonts; sprint.top_finishers range added."
+    },
+    {
+      "version": "1.10.0",
+      "released": "2026-09-29",
+      "ledmatrix_min_version": "3.6.1",
+      "notes": "Requires LEDMatrix core 3.6.1, the floor the sports scoreboards share (3.6.0 is the first release with src.common.sports_timezone). The fallback timezone resolver in f1_timezone.py is removed: the plugin now always runs core's, as it already did on a 3.6.x core. No behaviour change there: the timezone chosen and every log message are the same, and every safety-harness render is byte-identical."
+    },
+    {
+      "version": "1.9.6",
+      "released": "2026-09-29",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Uses LEDMatrix core's timezone resolver (src.common.sports_timezone, which is the same code as f1_timezone.py) when the core ships it. On older cores the bundled copy still runs, so the floor stays 3.4.0. No behaviour change: the timezone chosen and every log message are identical on both paths, and every safety-harness render is byte-identical."
+    },
+    {
+      "version": "1.9.5",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Removed code that nothing called. No change in behaviour."
+    },
+    {
+      "version": "1.9.4",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Top Finishers works at every value. Below 3, a favorite driver finishing outside the top places took a podium column; above 3, a favorite in P5 or lower never got their card. Its description now says the result card has room for three."
+    },
+    {
+      "version": "1.9.3",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Race-weekend data arrives when it happens. The faster race-weekend and live refresh never ran: with no get_update_interval hook the core called update() hourly; the hook now asks for the live-check interval on a race weekend and returns None otherwise. The latest round was read from a 24-hour persistent cache before the API, so after a race the round, and results, poles and qualifying keyed by it, lagged up to a day; the API is asked once the one-hour memo expires, with the persistent copy kept as the offline fallback. Recent races are cached by round, and a failed (empty) fetch is not cached. Qualifying looks one round ahead, so Saturday's qualifying shows before Sunday's race. The scroll content no longer looks the round up on the render path, and a practice session removed from sessions_to_show stops showing."
+    },
+    {
+      "version": "1.9.2",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Settings text only. upcoming.show_circuit_info adds its card in the Vegas marquee only (the f1_upcoming screen shows the race card alone), and upcoming.show_session_times controls the one time line on the upcoming card, not extra session times."
+    },
+    {
+      "version": "1.9.1",
+      "released": "2026-09-15",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Documentation only. The README said a config saved with scroll_delay 0.03 would now scroll at 33.3 px/s; in fact the exact pair scroll_speed 1 / scroll_delay 0.03 (the default before 1.9.0, when these settings did nothing) is treated as the default and keeps 100 px/s, and every other pair is used as set. The README and the Scroll Speed / Scroll Delay descriptions now say so, and explain how to scroll slower (for example 0.5 / 0.015 for 33.3 px/s). No change to what the plugin does."
+    },
+    {
+      "version": "1.9.0",
+      "released": "2026-09-15",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Requires LEDMatrix core 3.4.0. The standings header and title-battle cards count the season from the full schedule: the total was the number of upcoming calendar session entries (ten or so), so the header read \"Rd 17/10\" with a full bar and races remaining showed 0. Cancelled weekends are left out: ESPN keeps them in the schedule (2026 lists 25 events, Bahrain and Saudi Arabia cancelled), which would have read \"Rd 14/25\" with 11 races left instead of 14/23 with 9. Modes toggled in config now appear and disappear without a restart: core reads plugin.modes once, so all eight are registered and a disabled one returns False. A scroll mode with no data no longer re-renders every mode on every rotation (each render measured 12.46s on a Pi). upcoming.show_session_times, upcoming.countdown_enabled and qualifying.show_gaps now do what the README said; nothing read them before. scroll.scroll_speed and scroll.scroll_delay now set the speed: the shared resolver was handed the whole config and never looked in the scroll block. The default speed is unchanged at 100 px/s, what every install ran at: scroll_delay now defaults to 0.01 (it was 0.03), and a config that still holds the old default pair (scroll_speed 1, scroll_delay 0.03) is read as that default, so it keeps 100 px/s too. Any other values are used as set (scroll_speed / scroll_delay pixels per second). While scrolling the frame hold the resolver reports is applied (set_scrolling_state(True, frame_hold=...), a 3.4.0 argument, hence the floor) and released when a scroll completes or a static card is drawn. Removed the legacy frame-based setup, which read scroll.frame_based, scroll.min_duration and scroll.max_duration (never in the schema, so no one could set them), and the target_fps writes nothing read."
+    },
+    {
+      "version": "1.8.10",
+      "released": "2026-09-11",
+      "notes": "Load the 4x6 face at 7px when drawing placeholder team logos -- 4x6-font is crisp only at multiples of 7.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.8.9",
+      "released": "2026-09-08",
+      "notes": "Stop the web UI's own controls reporting the scoreboard as degraded. Two settings render as checkbox groups -- practice.sessions_to_show and vegas.sections -- and that widget is saved with a hidden companion field, so using either control writes sessions_to_show_data or sections_data beside the setting. The plugin never reads those keys, but both the practice and vegas objects set additionalProperties: false, so the core's schema check flagged them and the web UI showed \"Degraded: Config schema: Field 'practice': Additional properties are not allowed ('sessions_to_show_data' was unexpected)\", and the same for 'vegas', on a config the UI itself had just written. Both keys are now permitted -- unconstrained, since the widget has submitted the value both as an array and as a JSON string -- while unknown keys are still rejected, so a typo in a hand-edited config is still caught. Same fix as odds-ticker 1.4.5. Affects only the schema; nothing about what the scoreboard fetches or draws changes.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.8.7",
+      "released": "2026-09-03",
+      "notes": "Documentation. This README was already close: 65 of the 70 settings were documented, and the five missing were customization.auto_scale and the four font sizes, which are now covered. Three settings are marked as not implemented -- upcoming.show_session_times, upcoming.countdown_enabled and qualifying.show_gaps appear nowhere in the plugin or the core, though the countdown they claim to gate is drawn regardless. Adds real rendered screenshots of both standings modes, the constructor driver-split toggle and four panel sizes; the other six modes need a live race weekend to have anything to show.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.8.6",
+      "released": "2026-08-21",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Scope the 404 log downgrade to OpenF1. _fetch_json is shared with ESPN and Jolpi, where a 404 means a resource is genuinely missing and must keep its ERROR signal; only OpenF1 answers an empty result set with 404 {\"detail\": \"No results found.\"}. The downgrade now checks both the host and that body, so an unexplained OpenF1 404 or any 404 from the other two still logs at ERROR."
+    },
+    {
+      "version": "1.8.5",
+      "released": "2026-08-21",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Stop logging an empty OpenF1 result as an error. OpenF1 answers an empty result set with 404 {\"detail\": \"No results found.\"} rather than an empty list, so every practice-session query is a 404 until cars are on track. That normal condition was logged at ERROR, so a rig sitting between race weekends wrote ~60 spurious ERROR lines a day to the journal -- burying genuine failures and wearing the SD card for nothing. 404 now logs at DEBUG; 5xx, 401/403, timeouts and connection errors are unchanged."
+    },
+    {
+      "version": "1.8.4",
+      "released": "2026-08-19",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Make customization.auto_scale reachable in the web UI. The config form renders only the properties named in x-propertyOrder, so a setting the schema declares but that list omits was never drawn -- no field, no error, no hint it existed, and the only way to set it was to hand-edit config.json on the device. The values already validated on save and the plugin already read them; only the form was missing them."
+    },
+    {
+      "version": "1.8.3",
+      "released": "2026-08-14",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Fix stale scroll content after config changes. on_config_change replaces the scroll renderer and manager with new instances, but did not reset the scroll content signature. When a config change didn't alter F1 data fields (e.g., adjusting game_card_width or other rendering settings), the signature remained unchanged, causing _prepare_scroll_content to skip rebuilding content into the brand-new manager. This left the new manager with no prepared modes, resulting in missing or stale scroll content in Vegas mode and scroll displays until the next data update. The signature is now cleared on every config change to force a rebuild."
+    },
+    {
+      "version": "1.8.2",
+      "released": "2026-08-14",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Stop re-rendering the scroll images when the data has not changed. update() rebuilt all twelve scroll modes on every refresh, measured at 12.46s on a Pi with one image of 11250x64px. Outside a race weekend the refreshed data is byte-identical to the previous one, so nearly all of that rebuilt images that were already correct; the render loop shares the interpreter with the update worker, and the marquee stalled for up to half a second at a time. The build now runs only when a fingerprint of everything it draws from has moved, and the display path forces past the check if a mode is somehow unprepared."
+    },
+    {
+      "version": "1.8.1",
+      "released": "2026-08-12",
+      "notes": "Fix blurry score digits on the LED matrix: the outline-drawing helper used PIL's default anti-aliased text rendering, which blends pixel-font (PressStart2P) glyph edges into dim partial-lit pixels on a 1:1 matrix, muddying numbers (a \"6\" could read as a \"G\"). Text now draws in 1-bit font mode so every glyph -- scores, clocks, team names, status text -- renders crisp with no anti-aliasing.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.8.0",
+      "released": "2026-08-07",
+      "notes": "Stop F1 taking over the Vegas marquee. get_vegas_content() contributed every prepared mode at once, which measured 114 cards / 14,592px on a 512px panel -- close to six minutes of unbroken F1 at 50px/s, because what this plugin's own rotation shows as eight separate screens the marquee splices into one block. A new \"vegas\": {\"sections\": [...]} setting picks what joins the marquee, defaulting to the next race and the last race's results (around 15 seconds). Every section remains available: add them back to get the old behaviour, or set an empty list to keep F1 out of the marquee entirely. The plugin's own display modes are unchanged and still show everything.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.7.3",
+      "released": "2026-08-05",
+      "notes": "Fix ESPN 403s. Around 2026-08-04 ESPN's site.api began rejecting both browser-style and bare custom User-Agent strings, which returned 403 Forbidden for every request this plugin made. Requests now send an identifying agent with the project URL, which ESPN accepts. No behaviour change beyond the header.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-08-02",
+      "version": "1.7.2",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Auto-heal the stale \"timezone\": \"UTC\" left in saved configs by the pre-1.x write-back bug: it is now detected and ignored when the global or system timezone disagrees, so users no longer see UTC times or have to hand-edit config.json. Etc/UTC remains the explicit opt-in for UTC."
+    },
+    {
+      "version": "1.7.1",
+      "released": "2026-08-01",
+      "notes": "Honor the global smooth-scrolling FPS target (target_fps/scroll_target_fps) in scroll mode.",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-30",
+      "version": "1.7.0",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Driver cards now show the full surname when the panel has room (standings, podium, favorite-driver spotlight, qualifying/practice/sprint rows), falling back to the 3-letter code only where space is tight. Fixed the race-calendar row so the session-type badge no longer overlaps the date or the right-aligned session time."
+    },
+    {
+      "released": "2026-07-29",
+      "version": "1.6.0",
+      "notes": "Fix event start times rendering in UTC. The plugin looked for the LEDMatrix global timezone only on cache_manager.config_manager; on cores that expose config_manager via the plugin manager instead, that lookup found nothing and every start time was drawn in UTC even though the clock plugin was correct on the same device. Timezone resolution now checks the plugin override, then both config managers, then the host system zone, before falling back to UTC. Adds a documented timezone setting under Advanced Settings -- previously the key was not in the config schema, so hand-editing it had no effect.",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-18",
+      "version": "1.5.1",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Readability fixes: bigger font on 256x64+ panels; constructor cards show full team names (drop to a smaller pixel font before shortening); fixed driver-split/last-race-points overlap on the constructor card."
+    },
+    {
+      "released": "2026-07-18",
+      "version": "1.5.0",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Crisp per-size bitmap (BDF) fonts chosen by panel size; vertical-fill layout on tall panels (bigger logos, rows spread to fill height); larger circuit map on the upcoming card. Offline-deterministic golden tests added."
+    },
+    {
+      "released": "2026-07-17",
+      "version": "1.4.0",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Size-adaptive renderer: one central layout-metrics pass; width-aware font sizing with pixel-grid snapping; measured stat zone / header reservations; logos scale with the panel; full team/country names on wide panels."
+    },
+    {
+      "released": "2026-07-17",
+      "version": "1.3.26",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Config schema reorganized for a clearer setup experience: fine-tuning fields moved behind the web UI's collapsed Advanced Settings section (x-advanced). UX-only; no fields, defaults, or behavior changed."
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.25",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.24",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.23",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.22",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.21",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.20",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.19",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.18",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.17",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.16",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.15",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.14",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.13",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.12",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.11",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.10",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.9",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.8",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.7",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "1.3.6",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-27",
+      "version": "1.3.5",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-27",
+      "version": "1.3.4",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-27",
+      "version": "1.3.3",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-27",
+      "version": "1.3.2",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-27",
+      "version": "1.3.1",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-27",
+      "version": "1.3.0",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-15",
+      "version": "1.2.4",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "version": "1.2.3",
+      "released": "2026-03-08",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.2.2",
+      "released": "2026-03-02",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.2.1",
+      "released": "2026-02-24",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.2.0",
+      "released": "2026-02-24",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.1.0",
+      "released": "2026-02-17",
+      "ledmatrix_min_version": "2.0.0"
+    }
+  ],
+  "last_updated": "2026-10-02",
+  "stars": 0,
+  "downloads": 0,
+  "verified": true,
+  "screenshot": "",
+  "config_schema": "config_schema.json",
+  "compatible_versions": [
+    ">=3.6.1"
+  ]
+}

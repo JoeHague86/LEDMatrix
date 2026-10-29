@@ -1,0 +1,515 @@
+"""
+Stock & Crypto Ticker Plugin for LEDMatrix (Refactored)
+
+Displays scrolling stock tickers with prices, changes, and optional charts
+for stocks and cryptocurrencies. This refactored version splits functionality
+into focused modules for better maintainability.
+"""
+
+import time
+from typing import Dict, Any, Optional
+
+from src.plugin_system.base_plugin import BasePlugin
+
+try:
+    # Shared scroll pacing: resolves speed from config, snaps it to a speed the
+    # panel can show in whole pixels, and sets the frame hold that makes slow
+    # speeds crisp. See docs/SCROLL_PERFORMANCE.md in the core repo.
+    from src.common import scroll_config as _scroll_config
+except ImportError:  # core predates the shared helper
+    _scroll_config = None
+
+# Import our modular components
+from data_fetcher import StockDataFetcher
+from display_renderer import StockDisplayRenderer
+from config_manager import StockConfigManager
+
+
+class StockTickerPlugin(BasePlugin):
+    """
+    Stock and cryptocurrency ticker plugin with scrolling display.
+
+    This refactored version uses modular components:
+    - StockDataFetcher: Handles API calls and data fetching
+    - StockDisplayRenderer: Handles display creation, layout and the mini chart
+    - StockConfigManager: Handles configuration management
+    """
+    
+    def __init__(self, plugin_id: str, config: Dict[str, Any], 
+                 display_manager, cache_manager, plugin_manager):
+        """Initialize the stock ticker plugin."""
+        super().__init__(plugin_id, config, display_manager, cache_manager, plugin_manager)
+        
+        # Get display dimensions
+        self.display_width = display_manager.width
+        self.display_height = display_manager.height
+        
+        # Initialize modular components (rebuilt by on_config_change)
+        self._build_components(config)
+
+        # Plugin state
+        self.stock_data = {}
+        # display() runs once per frame, so the empty-data warning is kept to
+        # one line per gap rather than one per frame. See display().
+        self._warned_no_data = False
+        self.current_stock_index = 0
+        self.scroll_complete = False
+        self._has_scrolled = False
+
+        # Switch mode state
+        self.last_stock_switch = 0
+        self._switch_cycle_started = False
+        self._switch_stocks_shown = 0
+        
+        self.last_update_time = 0
+
+        self.logger.info("Stock ticker plugin initialized - %dx%d", 
+                        self.display_width, self.display_height)
+    
+    def _scroll_frame_hold(self) -> int:
+        """Refreshes to hold each frame for, from the resolved scroll settings.
+
+        1 on cores without the shared helper, which is the old behaviour: a new
+        frame every refresh.
+        """
+        settings = getattr(self, "_scroll_settings", None)
+        return getattr(settings, "frame_hold", 1) if settings else 1
+
+    def _build_components(self, config: Dict[str, Any]) -> None:
+        """Build the config, fetch and render components from ``config``.
+
+        Called from __init__ and on_config_change, so a web-UI save rebuilds
+        them exactly as a restart does.
+        """
+        self.config_manager = StockConfigManager(config, self.logger)
+        self.data_fetcher = StockDataFetcher(self.config_manager, self.cache_manager, self.logger)
+        self.display_renderer = StockDisplayRenderer(
+            self.config_manager.plugin_config,
+            self.display_width,
+            self.display_height,
+            self.logger
+        )
+        # Expose enable_scrolling for display controller FPS detection
+        self.enable_scrolling = self.config_manager.enable_scrolling
+        self.scroll_helper = self.display_renderer.get_scroll_helper()
+        self.global_config = config.get('global', {}) or {}
+        self._configure_scroll(config)
+
+    def _configure_scroll(self, config):
+        """Resolve scroll pacing through the core's shared resolver.
+
+        The resolver reads display.scroll_speed / display.scroll_delay (pixels
+        per step, seconds per step), snaps the speed to one the panel can
+        render in whole pixels, and reports the frame hold that
+        _display_scrolling passes to set_scrolling_state. Passing
+        display_manager lets it see the panel's refresh rate. Nothing writes
+        the helper's speed or FPS afterwards.
+        """
+        self.scroll_helper.set_dynamic_duration_settings(
+            enabled=self.config_manager.dynamic_duration,
+            min_duration=int(self.config_manager.min_duration),
+            max_duration=int(self.config_manager.max_duration),
+            buffer=self.config_manager.duration_buffer
+        )
+        if _scroll_config is None:
+            # Unreachable on the 3.4.0 floor; the import stays guarded only
+            # because the module gate does not yet list scroll_config as
+            # released. The helper keeps its own default pacing.
+            self._scroll_settings = None
+            return
+        self._scroll_settings = _scroll_config.configure(
+            self.scroll_helper,
+            plugin_config=config,
+            global_config=self.global_config,
+            display_manager=self.display_manager,
+            plugin_logger=self.logger,
+        )
+
+    def _update_interval(self) -> float:
+        """Seconds between fetches: update_interval, or crypto.update_interval
+        when crypto is on and due sooner. Each quote is cached for its own
+        type's interval (data_fetcher), so the shorter cadence only re-fetches
+        the type that is due."""
+        interval = float(self.config_manager.update_interval)
+        if self.config_manager.crypto_symbols:
+            interval = min(interval, float(self.config_manager.crypto_update_interval))
+        return interval
+
+    def get_update_interval(self) -> Optional[float]:
+        """The configured interval, so the manifest's 600 is only a default.
+
+        Core prefers the manifest's update_interval over the plugin's config
+        unless the plugin answers here, so a user's shorter update_interval
+        was ignored. Attribute reads only: core calls this every tick.
+        """
+        return self._update_interval()
+
+    def on_config_change(self, new_config: Dict[str, Any]) -> None:
+        """Apply a web-UI save without a restart.
+
+        Rebuilds the components from the new config (symbols, fonts, colours,
+        chart), re-runs the scroll resolver, and schedules a fetch. The fetch
+        itself is left to update(): this runs on the web thread.
+        """
+        super().on_config_change(new_config)
+        old_fetcher = self.data_fetcher
+        self._build_components(self.config)
+        old_fetcher.cleanup()
+        self.reset_cycle_state()
+        self.last_update_time = 0  # the next update() fetches the new symbols
+        self.logger.info("Stock ticker config updated live")
+
+    def update(self) -> None:
+        """Update stock and crypto data."""
+        current_time = time.time()
+
+        # Check if it's time to update
+        if current_time - self.last_update_time >= self._update_interval():
+            try:
+                self.logger.debug("Updating stock and crypto data")
+                fetched_data = self.data_fetcher.fetch_all_data()
+                self.stock_data = fetched_data
+                self.last_update_time = current_time
+                
+                # Clear scroll cache when data updates
+                if hasattr(self.scroll_helper, 'cached_image'):
+                    self.scroll_helper.cached_image = None
+                
+                
+            except Exception as e:
+                import traceback
+                self.logger.error("Error updating stock/crypto data: %s", e)
+                self.logger.debug("Traceback: %s", traceback.format_exc())
+    
+    def display(self, force_clear: bool = False) -> None:
+        """Display stocks with scrolling or static mode."""
+        if not self.stock_data:
+            # Once per gap, not once per frame. The display loop calls this at
+            # the scroll frame rate, so on a cold start -- where the first
+            # fetch is still in flight, or was deferred past the startup
+            # update budget -- warning every frame wrote ~1000 identical lines
+            # in the second before the data landed, burying real errors.
+            if not self._warned_no_data:
+                self.logger.warning("No stock data available, showing error state")
+                self._warned_no_data = True
+            # A static frame: release the scroll state and its frame hold.
+            self.display_manager.set_scrolling_state(False)
+            self._show_error_state()
+            return
+
+        if self._warned_no_data:
+            self.logger.info("Stock data is available again")
+            self._warned_no_data = False
+
+        if self.config_manager.display_mode == "scroll":
+            self._display_scrolling(force_clear)
+        else:
+            self._display_static(force_clear)
+    
+    def _display_scrolling(self, force_clear: bool = False) -> None:
+        """Display stocks with smooth scrolling animation."""
+        # Create scrolling image if needed
+        if not self.scroll_helper.cached_image or force_clear:
+            self._create_scrolling_display()
+        
+        if force_clear:
+            self.scroll_helper.reset_scroll()
+            self._has_scrolled = False
+            self.scroll_complete = False
+        
+        # Signal scrolling state
+        # Pass the frame hold every time scrolling starts, not once at
+        # construction: plugins share one display manager, so a hold set at
+        # init is wiped as soon as any other plugin finishes its scroll.
+        self.display_manager.set_scrolling_state(
+            True, frame_hold=self._scroll_frame_hold())
+        # Guard for display managers that don't implement deferred updates
+        # (e.g. the plugin-safety harness's bounds-checking display manager).
+        if hasattr(self.display_manager, "process_deferred_updates"):
+            self.display_manager.process_deferred_updates()
+        
+        # Update scroll position using the scroll helper
+        self.scroll_helper.update_scroll_position()
+        
+        # Get visible portion
+        visible_portion = self.scroll_helper.get_visible_portion()
+        if visible_portion:
+            # Update display - paste overwrites previous content (no need to clear)
+            self.display_manager.image.paste(visible_portion, (0, 0))
+            self.display_manager.update_display()
+        
+        # Log frame rate (less frequently to avoid spam)
+        self.scroll_helper.log_frame_rate()
+        
+        # Check if scroll is complete using ScrollHelper's method
+        if hasattr(self.scroll_helper, 'is_scroll_complete'):
+            self.scroll_complete = self.scroll_helper.is_scroll_complete()
+        elif self.scroll_helper.scroll_position == 0 and self._has_scrolled:
+            # Fallback: check if we've wrapped around (position is 0 after scrolling)
+            self.scroll_complete = True
+    
+    def _display_static(self, force_clear: bool = False) -> None:
+        """Display stocks in switch mode - one at a time, rotating on a timer."""
+        self.display_manager.set_scrolling_state(False)
+
+        symbols = list(self.stock_data.keys())
+        if not symbols:
+            self._show_error_state()
+            return
+
+        current_time = time.time()
+
+        # Initialize switch timer on first call
+        if self.last_stock_switch == 0:
+            self.last_stock_switch = current_time
+
+        # Rotate to next stock if switch_duration has elapsed
+        if (len(symbols) > 1
+                and current_time - self.last_stock_switch >= self.config_manager.switch_duration):
+            self.current_stock_index = (self.current_stock_index + 1) % len(symbols)
+            self.last_stock_switch = current_time
+            self._switch_stocks_shown += 1
+
+        # Mark cycle as started after first display
+        if not self._switch_cycle_started:
+            self._switch_cycle_started = True
+            self._switch_stocks_shown = 1  # Count the first stock
+
+        current_symbol = symbols[self.current_stock_index % len(symbols)]
+        current_data = self.stock_data[current_symbol]
+
+        static_image = self.display_renderer.create_static_display(current_symbol, current_data)
+        self.display_manager.image.paste(static_image, (0, 0))
+        self.display_manager.update_display()
+    
+    def _create_scrolling_display(self):
+        """Create the wide scrolling image with all stocks."""
+        try:
+            # Create scrolling image using display renderer
+            scrolling_image = self.display_renderer.create_scrolling_display(self.stock_data)
+            
+            if scrolling_image:
+                # Set up scroll helper with the image (properly initializes cached_array and state)
+                self.scroll_helper.set_scrolling_image(scrolling_image)
+                
+                self.logger.debug("Created scrolling image: %dx%d", 
+                                scrolling_image.width, scrolling_image.height)
+            else:
+                self.logger.error("Failed to create scrolling image")
+                self.scroll_helper.clear_cache()
+            
+        except Exception as e:
+            import traceback
+            self.logger.error("Error creating scrolling display: %s", e)
+            self.logger.error("Traceback: %s", traceback.format_exc())
+            self.scroll_helper.clear_cache()
+    
+    def _show_error_state(self):
+        """Show error state when no data is available."""
+        try:
+            error_image = self.display_renderer._create_error_display()
+            self.display_manager.image.paste(error_image, (0, 0))
+            self.display_manager.update_display()
+        except Exception as e:
+            self.logger.error("Error showing error state: %s", e)
+    
+    def get_cycle_duration(self, display_mode: str = None) -> Optional[float]:
+        """
+        Calculate the expected cycle duration based on content width and scroll speed.
+        
+        This implements dynamic duration scaling where:
+        - Duration is calculated from total scroll distance and scroll speed
+        - Includes buffer time for smooth cycling
+        - Respects min/max duration limits
+        
+        Args:
+            display_mode: The display mode (unused for stock ticker as it has a single mode)
+        
+        Returns:
+            Calculated duration in seconds, or None if dynamic duration is disabled or not available
+        """
+        # display_mode is unused but kept for API consistency with other plugins
+        _ = display_mode
+
+        # Switch mode: total duration = num_symbols * switch_duration
+        if self.config_manager.display_mode == "switch":
+            num_symbols = len(self.stock_data) if self.stock_data else 1
+            return float(num_symbols * self.config_manager.switch_duration)
+
+        if not self.config_manager.dynamic_duration:
+            return None
+
+        # Check if we have a cached image with calculated duration
+        if self.scroll_helper and self.scroll_helper.cached_image:
+            try:
+                dynamic_duration = self.scroll_helper.get_dynamic_duration()
+                if dynamic_duration and dynamic_duration > 0:
+                    self.logger.debug(
+                        "get_cycle_duration() returning calculated duration: %.1fs",
+                        dynamic_duration
+                    )
+                    return float(dynamic_duration)
+            except Exception as e:
+                self.logger.warning(
+                    "Error getting dynamic duration from scroll helper: %s",
+                    e
+                )
+        
+        # If no cached image yet, return None (will be calculated when image is created)
+        self.logger.debug("get_cycle_duration() returning None (no cached image yet)")
+        return None
+    
+    def get_display_duration(self) -> float:
+        """
+        Get the display duration in seconds.
+        
+        If dynamic duration is enabled and scroll helper has calculated a duration,
+        use that. Otherwise use the static display_duration.
+        """
+        # If dynamic duration is enabled and scroll helper has calculated a duration, use it
+        if (self.config_manager.dynamic_duration and 
+            hasattr(self.scroll_helper, 'calculated_duration') and 
+            self.scroll_helper.calculated_duration > 0):
+            return float(self.scroll_helper.calculated_duration)
+        
+        # Otherwise use static duration
+        return self.config_manager.get_display_duration()
+    
+    def get_dynamic_duration(self) -> int:
+        """Get the dynamic duration setting."""
+        return self.config_manager.get_dynamic_duration()
+    
+    def supports_dynamic_duration(self) -> bool:
+        """
+        Determine whether this plugin should use dynamic display durations.
+
+        Returns True for switch mode (always knows cycle length) or if
+        dynamic_duration is enabled in the display config for scroll mode.
+        """
+        if self.config_manager.display_mode == "switch":
+            return True
+        return bool(self.config_manager.dynamic_duration)
+    
+    def get_dynamic_duration_cap(self) -> Optional[float]:
+        """
+        Return the maximum duration (in seconds) the controller should wait for
+        this plugin to complete its display cycle when using dynamic duration.
+
+        Returns the max_duration from config, or None if not set.
+        """
+        if self.config_manager.display_mode == "switch":
+            num_symbols = len(self.stock_data) if self.stock_data else 1
+            return float(num_symbols * self.config_manager.switch_duration)
+
+        if not self.config_manager.dynamic_duration:
+            return None
+
+        max_duration = self.config_manager.max_duration
+        if max_duration and max_duration > 0:
+            return float(max_duration)
+        return None
+    
+    def is_cycle_complete(self) -> bool:
+        """
+        Report whether the plugin has shown a full cycle of content.
+        
+        For scrolling content, this checks if the scroll has completed one full cycle.
+        """
+        # Switch mode: complete after showing all stocks once
+        if self.config_manager.display_mode == "switch":
+            if not self.stock_data:
+                return True
+            return (self._switch_cycle_started
+                    and self._switch_stocks_shown >= len(self.stock_data))
+
+        if not self.config_manager.dynamic_duration:
+            # If dynamic duration is disabled, always report complete
+            return True
+
+        # For scrolling mode, check if scroll has completed
+        if hasattr(self.scroll_helper, 'is_scroll_complete'):
+            return self.scroll_helper.is_scroll_complete()
+        
+        # Fallback: check if scroll position has wrapped around
+        return self.scroll_complete
+    
+    def reset_cycle_state(self) -> None:
+        """
+        Reset any internal counters/state related to cycle tracking.
+        
+        Called by the display controller before beginning a new dynamic-duration
+        session. Resets scroll position and stock index.
+        """
+        super().reset_cycle_state()
+        self.scroll_complete = False
+        self.current_stock_index = 0
+        self._has_scrolled = False
+        self.last_stock_switch = 0
+        self._switch_cycle_started = False
+        self._switch_stocks_shown = 0
+        if hasattr(self.scroll_helper, 'reset_scroll'):
+            self.scroll_helper.reset_scroll()
+    
+    def get_info(self) -> Dict[str, Any]:
+        """Get plugin information."""
+        # Built on BasePlugin's info (which carries the real id) rather than a
+        # separate dict with a hard-coded name and a version stuck at 2.2.0.
+        info = super().get_info()
+        cfg = self.config_manager
+        settings = getattr(self, '_scroll_settings', None)
+        info.update({
+            'display_mode': cfg.display_mode,
+            'scrolling': cfg.enable_scrolling,
+            'chart_enabled': cfg.toggle_chart,
+            'stocks_enabled': cfg.stocks_enabled,
+            'stocks_count': len(cfg.stock_symbols),
+            'crypto_count': len(cfg.crypto_symbols),
+            'scroll_pixels_per_second': getattr(settings, 'pixels_per_second', None),
+            'update_interval': self._update_interval(),
+            'display_duration': cfg.display_duration,
+        })
+        return info
+
+    # Configuration methods
+    def set_toggle_chart(self, enabled: bool) -> None:
+        """Set whether to show mini charts."""
+        self.config_manager.set_toggle_chart(enabled)
+        self.display_renderer.set_toggle_chart(enabled)
+
+    def set_display_mode(self, mode: str) -> None:
+        """Set display mode ('scroll' or 'switch')."""
+        self.config_manager.set_display_mode(mode)
+        self.enable_scrolling = self.config_manager.enable_scrolling
+        self.reset_cycle_state()
+
+    def set_enable_scrolling(self, enabled: bool) -> None:
+        """Set whether scrolling is enabled (legacy, maps to display_mode)."""
+        self.set_display_mode("scroll" if enabled else "switch")
+    
+    def validate_config(self) -> bool:
+        """Validate plugin configuration."""
+        # Call parent validation first
+        if not super().validate_config():
+            return False
+            
+        # Use config manager's validation
+        if not self.config_manager.validate_config():
+            return False
+            
+        return True
+
+    def reload_config(self) -> None:
+        """Reload configuration."""
+        self.config_manager.reload_config()
+        # Update components with new config
+        self.data_fetcher.config = self.config_manager.plugin_config
+        self.display_renderer.config = self.config_manager.plugin_config
+    
+    def cleanup(self) -> None:
+        """Clean up resources."""
+        try:
+            if hasattr(self.data_fetcher, 'cleanup'):
+                self.data_fetcher.cleanup()
+            self.logger.info("Stock ticker plugin cleanup completed")
+        except Exception as e:
+            self.logger.error("Error during cleanup: %s", e)

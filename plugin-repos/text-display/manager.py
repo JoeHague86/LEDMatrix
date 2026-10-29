@@ -1,0 +1,828 @@
+"""
+Text Display Plugin for LEDMatrix
+
+Display custom scrolling or static text messages with configurable fonts and colors.
+Perfect for announcements, messages, or custom displays.
+
+Features:
+- Scrolling or static text display
+- TTF and BDF font support
+- Configurable colors and scroll speed
+- Automatic text width calculation
+- Smooth scrolling animation
+
+API Version: 1.0.0
+"""
+
+import logging
+import os
+import time
+from typing import Dict, Any
+from PIL import Image, ImageDraw, ImageFont
+from pathlib import Path
+
+from src.plugin_system.base_plugin import BasePlugin
+try:
+    # Shared scroll pacing: resolves speed from any supported config shape,
+    # snaps it to a speed the panel can show in whole pixels, and reports the
+    # frame hold that keeps slow speeds crisp. Core docs: SCROLL_PERFORMANCE.md
+    from src.common import scroll_config as _scroll_config
+except ImportError:  # core predates the shared helper
+    _scroll_config = None
+
+from src.common.scroll_helper import ScrollHelper
+
+try:
+    from src.adaptive_layout import FontStep, LADDER_ARCADE
+    # Prefer PressStart2P (the plugin's classic look) at its crisp integer
+    # sizes, then step down to 4x6-font for panels too small for even 8px.
+    # TTF-only on purpose: this plugin renders with PIL draw.text(), which
+    # can't take the freetype BDF faces the grid ladder returns.
+    #
+    # Both rungs are verified crisp (measure_font_crispness == 0.0, see
+    # test_font_mode_auto.py). PressStart2P only rasterizes without
+    # antialiasing at exact multiples of 8px. "5by7.regular" was dropped —
+    # it renders visibly antialiased at every size tested (never below
+    # ~30% gray pixels) — and "4x6-font" moved from 6px to 7px, its only
+    # crisp size; 6px is ~33% antialiased despite measuring the same ink
+    # height.
+    AUTO_FONT_LADDER = LADDER_ARCADE + (
+        FontStep("4x6-font", 7),
+    )
+except ImportError:  # older LEDMatrix core without the adaptive layout system
+    AUTO_FONT_LADDER = None
+
+logger = logging.getLogger(__name__)
+
+
+class TextDisplayPlugin(BasePlugin):
+    """
+    Text display plugin for showing custom messages.
+    
+    Supports scrolling and static text with custom fonts and colors.
+    
+    Configuration options:
+        text (str): Message to display
+        font_mode (str): "manual" uses font_path/font_size as-is (default);
+            "auto" picks the largest crisp font that fits the panel — static
+            text fits both dimensions, scrolling text fits height only
+        font_path (str): Path to TTF or BDF font file (manual mode)
+        font_size (int): Font size in pixels (manual mode)
+        scroll (bool): Enable scrolling animation
+        scroll_speed (float): Scroll speed in pixels per frame (default: 1, range: 0.1-10)
+        scroll_delay (float): Delay in seconds per frame (default: 0.01, range: 0.001-0.1)
+        scroll_loop (bool): If true, text loops continuously (default: true)
+        text_color (list): RGB text color
+        background_color (list): RGB background color
+    """
+    
+    def __init__(self, plugin_id: str, config: Dict[str, Any],
+                 display_manager, cache_manager, plugin_manager):
+        """Initialize the text display plugin."""
+        super().__init__(plugin_id, config, display_manager, cache_manager, plugin_manager)
+        
+        # Configuration
+        # Default kept in sync with config_schema.json — the schema is what
+        # the auto-generated web UI form populates from, so the code default
+        # must match what the form prefill shows.
+        self.text = config.get('text', 'Subscribe to ChuckBuilds')
+        self.font_mode = config.get('font_mode', 'manual')
+        if self.font_mode == 'auto' and AUTO_FONT_LADDER is None:
+            self.logger.warning(
+                "font_mode 'auto' requires a LEDMatrix core with the adaptive "
+                "layout system; falling back to manual font settings"
+            )
+            self.font_mode = 'manual'
+        self.font_path = config.get('font_path', 'assets/fonts/PressStart2P-Regular.ttf')
+        self.font_size = config.get('font_size', 8)
+        self.scroll_enabled = config.get('scroll', True)
+        # Signal to DisplayController that this plugin needs high-FPS treatment when scrolling
+        self.enable_scrolling = self.scroll_enabled
+        # Pixels per step and seconds per step; the shared resolver turns the
+        # pair into pixels per second (see _configure_scroll).
+        self.scroll_speed = float(config.get('scroll_speed', 1))
+        self.scroll_delay = float(config.get('scroll_delay', 0.01))
+        self.scroll_loop = config.get('scroll_loop', True)  # Default to looping for backward compatibility
+        # config_schema types scroll_gap_width as "number", so the web UI can persist
+        # it as a float (e.g. 32.0); Image.new() requires int dimensions.
+        self.scroll_gap_width = int(config.get('scroll_gap_width', 32))
+        # display_duration is the on-screen floor for the dynamic scroll duration.
+        # It's a time value (seconds), not a pixel dimension, so keep it a float to
+        # preserve fractional seconds (schema types it "number", e.g. 10.5).
+        self.display_duration = float(config.get('display_duration', 10.0))
+        # Convert colors to integers to handle string values from JSON config
+        try:
+            text_color_raw = config.get('text_color', [255, 255, 255])
+            bg_color_raw = config.get('background_color', [0, 0, 0])
+            self.text_color = tuple(int(c) for c in text_color_raw)
+            self.bg_color = tuple(int(c) for c in bg_color_raw)
+        except (ValueError, TypeError) as e:
+            self.logger.error(f"Invalid color values in config: {e}")
+            # Use defaults if conversion fails
+            self.text_color = (255, 255, 255)
+            self.bg_color = (0, 0, 0)
+        
+        # State
+        # render_text is what actually gets drawn/measured — same as text in
+        # manual mode; in auto static mode it may be ellipsized to fit.
+        self.render_text = self.text
+        self._auto_fit_dims = None  # (w, h) the auto font was fitted for
+        self.font = self._resolve_font()
+        self.text_width = 0
+        self.text_image_cache = None
+        
+        # Frame rate tracking for FPS logging
+        self.frame_count = 0
+        self.last_frame_time = None
+        self.last_fps_log_time = None
+        self.frame_times = []
+        
+        # Calculate text dimensions
+        self._calculate_text_dimensions()
+        
+        # Initialize ScrollHelper for scrolling functionality
+        # display_manager.width/height, not matrix.width: matrix is None when
+        # core's hardware init failed (the hasattr guard that was here did not
+        # catch that), and the properties fall back to the canvas size.
+        display_width = self.display_manager.width
+        display_height = self.display_manager.height
+        self.scroll_helper = ScrollHelper(display_width, display_height, logger=self.logger)
+        self._configure_scroll()
+        self.scroll_helper.set_dynamic_duration_settings(
+            enabled=True,
+            # Honor the documented display_duration setting as the on-screen floor.
+            # Was hardcoded to 10, which silently ignored display_duration whenever
+            # dynamic duration was active.
+            min_duration=self.display_duration,
+            max_duration=300,
+            buffer=0.1
+        )
+        
+        # Register fonts
+        self._register_fonts()
+        
+        self.logger.info(f"Text display plugin initialized: '{self.text[:30]}...'")
+        self.logger.info(f"Font: {self.font_path}, Size: {self.font_size}, Scroll: {self.scroll_enabled}")
+    
+    def _register_fonts(self):
+        """Register fonts with the font manager."""
+        try:
+            if not hasattr(self.plugin_manager, 'font_manager'):
+                return
+            
+            font_manager = self.plugin_manager.font_manager
+            
+            font_manager.register_manager_font(
+                manager_id=self.plugin_id,
+                element_key=f"{self.plugin_id}.text",
+                family="press_start",
+                size_px=self.font_size,
+                color=self.text_color
+            )
+            
+            self.logger.info("Text display fonts registered")
+        except Exception as e:
+            self.logger.warning(f"Error registering fonts: {e}")
+    
+    def _resolve_font(self):
+        """Pick the font per font_mode: auto-fit to the panel, or manual."""
+        if self.font_mode == 'auto':
+            font = self._resolve_auto_font()
+            if font is not None:
+                return font
+        self.render_text = self.text
+        return self._load_font()
+
+    def _resolve_auto_font(self):
+        """Largest crisp font that fits the panel (adaptive layout system).
+
+        Static text is fitted to both dimensions (ellipsized only if even the
+        smallest rung is too wide); scrolling text is fitted by height only,
+        since width is unconstrained by design.
+        """
+        if AUTO_FONT_LADDER is None:
+            return None
+        try:
+            ctx = self.layout
+            box = ctx.bounds.inset(1)
+            if self.scroll_enabled:
+                fit = ctx.fit_text(self.text, (10 ** 9, box.h),
+                                   ladder=AUTO_FONT_LADDER, ellipsis=False)
+            else:
+                fit = ctx.fit_text(self.text, box, ladder=AUTO_FONT_LADDER)
+            self.render_text = fit.text
+            self.font_size = fit.size_px
+            self._auto_fit_dims = (ctx.width, ctx.height)
+            self.logger.info(
+                f"Auto font: {fit.family} @ {fit.size_px}px on "
+                f"{ctx.width}x{ctx.height} (fits={fit.fits})"
+            )
+            return fit.font
+        except Exception as e:
+            self.logger.warning(f"Auto font sizing failed, using manual font: {e}")
+            return None
+
+    def _ensure_auto_font_current(self):
+        """Re-fit the auto font when the logical display size changes
+        (Vegas segments, double-sided logical screens, harness sizes)."""
+        if self.font_mode != 'auto' or self._auto_fit_dims is None:
+            return
+        dims = (self.display_manager.width, self.display_manager.height)
+        if dims == self._auto_fit_dims:
+            return
+        self.font = self._resolve_font()
+        self._calculate_text_dimensions()
+        self.text_image_cache = None
+        if self.scroll_helper:
+            self.scroll_helper.reset_scroll()
+
+    def _load_font(self):
+        """Load the specified font file (TTF or BDF)."""
+        font_path = self.font_path
+        
+        # Resolve relative paths to project root
+        if not os.path.isabs(font_path):
+            # Try multiple resolution strategies
+            resolved_path = None
+            
+            # Strategy 1: Try as-is (if running from project root)
+            if os.path.exists(font_path):
+                resolved_path = font_path
+            else:
+                # Strategy 2: Try relative to current working directory (project root)
+                cwd_path = os.path.join(os.getcwd(), font_path)
+                if os.path.exists(cwd_path):
+                    resolved_path = cwd_path
+                else:
+                    # Strategy 3: Try relative to plugin directory's parent (project root)
+                    # Get the plugin directory (assuming we're in plugins/text-display/)
+                    plugin_dir = Path(__file__).parent
+                    project_root = plugin_dir.parent.parent
+                    project_path = project_root / font_path
+                    if project_path.exists():
+                        resolved_path = str(project_path)
+                    else:
+                        # Strategy 4: Resolve against the core install the
+                        # display manager was loaded from — works when the
+                        # process cwd is not the core root (e.g. CI harness).
+                        # Walk upward because the object may come from a
+                        # nested package (src/plugin_system/testing/...).
+                        try:
+                            import inspect
+                            module_path = Path(inspect.getfile(type(self.display_manager))).resolve()
+                            for ancestor in module_path.parents:
+                                candidate = ancestor / font_path
+                                if candidate.exists():
+                                    resolved_path = str(candidate)
+                                    break
+                        except Exception as exc:
+                            self.logger.debug(
+                                "Module-relative font resolution failed: %s", exc)
+            
+            if resolved_path:
+                font_path = resolved_path
+            else:
+                self.logger.warning(f"Font file not found: {font_path}, using default")
+                return ImageFont.load_default()
+        
+        if not os.path.exists(font_path):
+            self.logger.warning(f"Font file not found: {font_path}, using default")
+            return ImageFont.load_default()
+        
+        try:
+            if font_path.lower().endswith('.ttf'):
+                font = ImageFont.truetype(font_path, self.font_size)
+                self.logger.info(f"Loaded TTF font: {font_path}")
+                return font
+            elif font_path.lower().endswith('.bdf'):
+                # Loaded through PIL's FreeType binding, like the TTF branch,
+                # so every draw/measure call gets a real ImageFont. This used
+                # to return a bare freetype.Face, which PIL cannot draw with
+                # ("'Face' object has no attribute 'getbbox'"), so a .bdf
+                # never rendered. A .bdf also exists at exactly one pixel
+                # size and FreeType refuses any other, so retry at the size
+                # the file declares -- the same loader clock-simple,
+                # countdown and calendar use.
+                try:
+                    font = ImageFont.truetype(font_path, self.font_size)
+                except OSError:
+                    native = self._bdf_pixel_size(font_path)
+                    if native is None or native == self.font_size:
+                        raise
+                    font = ImageFont.truetype(font_path, native)
+                    self.logger.info(
+                        f"Loaded BDF font: {font_path} at its native size {native} "
+                        f"(font_size {self.font_size} does not apply to a bitmap face)")
+                    return font
+                self.logger.info(f"Loaded BDF font: {font_path}")
+                return font
+            else:
+                self.logger.warning(f"Unsupported font type: {font_path}")
+                return ImageFont.load_default()
+        except Exception as e:
+            self.logger.error(f"Failed to load font {font_path}: {e}")
+            return ImageFont.load_default()
+
+    @staticmethod
+    def _bdf_pixel_size(path: str):
+        """The pixel size a .bdf font declares, or None if it does not."""
+        try:
+            with open(path, "r", encoding="latin-1") as handle:
+                for line in handle:
+                    if line.startswith("PIXEL_SIZE"):
+                        return int(line.split()[1])
+                    if line.startswith("CHARS"):
+                        break  # past the header; no point reading the glyphs
+        except (OSError, ValueError, IndexError):
+            return None
+        return None
+
+    def _calculate_text_dimensions(self):
+        """Calculate text width for scrolling."""
+        if not self.text or not self.font:
+            self.text_width = 0
+            return
+        
+        try:
+            # Create temporary image to measure text
+            temp_img = Image.new('RGB', (1, 1))
+            temp_draw = ImageDraw.Draw(temp_img)
+            
+            if isinstance(self.font, ImageFont.FreeTypeFont) or isinstance(self.font, ImageFont.ImageFont):
+                bbox = temp_draw.textbbox((0, 0), self.render_text, font=self.font)
+                self.text_width = bbox[2] - bbox[0]
+            else:
+                # Default fallback
+                self.text_width = len(self.render_text) * 8
+
+            self.logger.info(f"Text width calculated: {self.text_width}px for '{self.render_text[:30]}...'")
+        except Exception as e:
+            self.logger.error(f"Error calculating text width: {e}")
+            self.text_width = len(self.render_text) * 8
+    
+    def _create_text_cache(self):
+        """Pre-render the text onto an image for smooth scrolling using ScrollHelper."""
+        if not self.text or self.text_width == 0:
+            self.logger.warning("Cannot create text cache: text is empty or text_width is 0")
+            return
+        
+        try:
+            matrix_width = self.display_manager.width
+            matrix_height = self.display_manager.height
+            
+            # Total width: initial padding + text + final padding (so text scrolls completely off) + gap
+            # Structure: [display_width padding] [text] [display_width padding] [gap]
+            # This ensures text starts off-screen right and scrolls completely off-screen left
+            # int() guard: Image.new() requires integer dimensions; any float component
+            # would raise "'float' object cannot be interpreted as an integer".
+            cache_width = int(matrix_width + self.text_width + matrix_width + self.scroll_gap_width)
+            
+            # Create cache image
+            self.text_image_cache = Image.new('RGB', (cache_width, matrix_height), self.bg_color)
+            draw = ImageDraw.Draw(self.text_image_cache)
+            draw.fontmode = "1"  # Pixel fonts on an LED panel: 1-bit text so every lit pixel is fully lit (no AA fringe).
+            
+            # Calculate vertical centering
+            temp_img = Image.new('RGB', (1, 1))
+            temp_draw = ImageDraw.Draw(temp_img)
+            bbox = temp_draw.textbbox((0, 0), self.render_text, font=self.font)
+            text_height = bbox[3] - bbox[1]
+            y_pos = (matrix_height - text_height) // 2 - bbox[1]
+
+            # Draw text starting after the initial display_width padding
+            draw.text((matrix_width, y_pos), self.render_text, font=self.font, fill=self.text_color)
+            
+            # Ensure image is in RGB mode (required for numpy conversion)
+            if self.text_image_cache.mode != 'RGB':
+                self.text_image_cache = self.text_image_cache.convert('RGB')
+            
+            # Set the scrolling image in ScrollHelper
+            self.scroll_helper.set_scrolling_image(self.text_image_cache)
+            
+            # Verify it was set correctly
+            if self.scroll_helper.cached_image is None:
+                self.logger.error("Failed to set scrolling image in ScrollHelper")
+            if self.scroll_helper.cached_array is None:
+                self.logger.error("ScrollHelper cached_array is None after set_scrolling_image")
+            
+            self.logger.info(f"Created text cache: {cache_width}x{matrix_height} (text: {self.text_width}px + {matrix_width}px end buffer + {self.scroll_gap_width}px gap)")
+            self.logger.debug(f"Text cache details: text_width={self.text_width}, matrix_width={matrix_width}, "
+                           f"end_buffer={matrix_width}, scroll_gap_width={self.scroll_gap_width}, "
+                           f"scroll_helper.total_scroll_width={self.scroll_helper.total_scroll_width}, "
+                           f"scroll_helper.cached_image={'set' if self.scroll_helper.cached_image else 'None'}, "
+                           f"scroll_helper.cached_array={'set' if self.scroll_helper.cached_array is not None else 'None'}")
+        except Exception as e:
+            self.logger.error(f"Failed to create text cache: {e}", exc_info=True)
+            self.text_image_cache = None
+    
+    def _scroll_frame_hold(self) -> int:
+        """Refreshes to hold each frame for, from the resolved scroll settings.
+
+        1 without the shared helper, which is the old behaviour: a new frame
+        every panel refresh.
+        """
+        settings = getattr(self, "_scroll_settings", None)
+        return getattr(settings, "frame_hold", 1) if settings else 1
+
+    def _configure_scroll(self) -> None:
+        """Resolve scroll pacing through the core's shared resolver.
+
+        The resolver reads the root scroll_speed / scroll_delay pair (pixels
+        per step, seconds per step), snaps the result to a speed the panel can
+        draw in whole pixels, and applies it to the helper, reporting the frame
+        hold display() passes to set_scrolling_state. Nothing is written to the
+        helper's speed or FPS afterwards: set_scroll_speed() clears the
+        resolver's fixed per-frame step, which is what left a live speed edit
+        pacing differently from the same config after a restart.
+        """
+        if _scroll_config is None:
+            # Unreachable on the 3.4.0 floor; the import stays guarded only
+            # because the module gate does not yet list scroll_config as
+            # released. The helper keeps its own default pacing.
+            self._scroll_settings = None
+            return
+        self._scroll_settings = _scroll_config.configure(
+            self.scroll_helper,
+            plugin_config=self.config,
+            global_config=self.global_config,
+            display_manager=self.display_manager,
+            plugin_logger=self.logger,
+        )
+
+    def update(self) -> None:
+        """Update scroll position if scrolling is enabled using ScrollHelper."""
+        if not self.scroll_enabled or self.text_width <= self.display_manager.width:
+            # Reset scroll position if scrolling is disabled or text fits
+            if self.scroll_helper:
+                self.scroll_helper.reset_scroll()
+            return
+        
+        # Ensure cache is created before updating scroll position
+        if not self.text_image_cache:
+            self._create_text_cache()
+        
+        # Use ScrollHelper to update scroll position
+        if self.scroll_helper and self.text_image_cache:
+            # Verify scroll_helper has the image set
+            if self.scroll_helper.cached_image is None:
+                self.logger.warning("ScrollHelper cached_image is None, re-setting scrolling image")
+                self.scroll_helper.set_scrolling_image(self.text_image_cache)
+            
+            # In one-shot mode, don't update if scroll is complete
+            if not self.scroll_loop and self.scroll_helper.is_scroll_complete():
+                # One-shot mode and complete - don't update position
+                return
+            
+            self.scroll_helper.update_scroll_position()
+    
+    def display(self, force_clear: bool = False) -> None:
+        """
+        Display the text on the LED matrix using ScrollHelper.
+        
+        Args:
+            force_clear: If True, clear display before rendering
+        """
+        if not self.text:
+            # Nothing to draw: drop any scroll state and frame hold a previous
+            # frame (before the text was cleared) left set.
+            self.display_manager.set_scrolling_state(False)
+            return
+
+        try:
+            self._ensure_auto_font_current()
+            matrix_width = self.display_manager.width
+            matrix_height = self.display_manager.height
+            
+            if self.scroll_enabled and self.text_width > matrix_width:
+                # Scrolling text - use ScrollHelper
+                if not self.text_image_cache:
+                    self._create_text_cache()
+                
+                if self.text_image_cache and self.scroll_helper:
+                    # Verify scroll_helper has the image set
+                    if self.scroll_helper.cached_image is None:
+                        self.logger.warning("ScrollHelper cached_image is None in display(), re-setting scrolling image")
+                        self.scroll_helper.set_scrolling_image(self.text_image_cache)
+                    
+                    # Update scroll position (handles time-based scrolling automatically)
+                    # This ensures scroll position is updated every frame
+                    was_complete = self.scroll_helper.is_scroll_complete()
+                    
+                    # In one-shot mode, don't update if scroll is already complete
+                    if not self.scroll_loop and was_complete:
+                        # One-shot mode and already complete - don't update position
+                        is_now_complete = True
+                    else:
+                        # Update scroll position (will handle completion)
+                        self.scroll_helper.update_scroll_position()
+                        is_now_complete = self.scroll_helper.is_scroll_complete()
+                        
+                        # Handle scroll completion based on loop setting
+                        if is_now_complete:
+                            if self.scroll_loop:
+                                # Continuous looping mode - reset when complete
+                                self.scroll_helper.reset_scroll()
+                                if not was_complete:
+                                    # Just completed this frame
+                                    self.logger.debug("Scroll completed and reset for continuous loop")
+                                else:
+                                    # Was already complete (shouldn't happen often, but handle it)
+                                    self.logger.debug("Scroll reset for continuous loop (was already complete)")
+                            else:
+                                # One-shot mode - stop scrolling when complete
+                                # Scroll position is already clamped by ScrollHelper, so just stop updating
+                                if not was_complete:
+                                    self.logger.info("Scroll completed in one-shot mode - stopping")
+                    
+                    # Signal scrolling state, with the resolver's frame hold,
+                    # on every frame the strip is on screen -- including the
+                    # parked end frame of a finished one-shot scroll, as
+                    # odds-ticker, news and stocks do. Releasing it there let
+                    # core's update_display() skip the identical frame without
+                    # waiting for vsync, so the controller's 8ms loop ran
+                    # unpaced for the rest of the slot and dropped the hold.
+                    self.display_manager.set_scrolling_state(
+                        True, frame_hold=self._scroll_frame_hold())
+                    
+                    # Get visible portion from ScrollHelper
+                    visible_image = self.scroll_helper.get_visible_portion()
+                    
+                    if visible_image:
+                        # Ensure display_manager.image exists and is the right size
+                        if not hasattr(self.display_manager, 'image') or self.display_manager.image is None:
+                            self.display_manager.image = Image.new('RGB', (matrix_width, matrix_height), self.bg_color)
+                        
+                        # Update display with visible portion (use paste like odds-ticker)
+                        self.display_manager.image.paste(visible_image, (0, 0))
+                        self.display_manager.update_display()
+                        
+                        # Log frame rate for scrolling text
+                        self._log_frame_rate()
+                        
+                        self.logger.debug(f"Displayed visible portion: scroll_position={self.scroll_helper.scroll_position:.2f}, "
+                                        f"image_size={visible_image.size}")
+                    else:
+                        self.logger.warning("ScrollHelper.get_visible_portion() returned None, using fallback")
+                        # Fallback: direct draw
+                        img = Image.new('RGB', (matrix_width, matrix_height), self.bg_color)
+                        draw = ImageDraw.Draw(img)
+                        draw.fontmode = "1"  # Pixel fonts on an LED panel: 1-bit text so every lit pixel is fully lit (no AA fringe).
+                        bbox = draw.textbbox((0, 0), self.render_text, font=self.font)
+                        text_height = bbox[3] - bbox[1]
+                        y_pos = (matrix_height - text_height) // 2 - bbox[1]
+                        draw.text((0, y_pos), self.render_text, font=self.font, fill=self.text_color)
+                        if not hasattr(self.display_manager, 'image') or self.display_manager.image is None:
+                            self.display_manager.image = img
+                        else:
+                            self.display_manager.image.paste(img, (0, 0))
+                        self.display_manager.update_display()
+                else:
+                    # Fallback: static text if cache creation failed
+                    self.display_manager.set_scrolling_state(False)
+                    img = Image.new('RGB', (matrix_width, matrix_height), self.bg_color)
+                    draw = ImageDraw.Draw(img)
+                    draw.fontmode = "1"  # Pixel fonts on an LED panel: 1-bit text so every lit pixel is fully lit (no AA fringe).
+                    bbox = draw.textbbox((0, 0), self.render_text, font=self.font)
+                    text_width = bbox[2] - bbox[0]
+                    text_height = bbox[3] - bbox[1]
+                    x_pos = (matrix_width - text_width) // 2
+                    y_pos = (matrix_height - text_height) // 2 - bbox[1]
+                    draw.text((x_pos, y_pos), self.render_text, font=self.font, fill=self.text_color)
+                    self.display_manager.image = img
+                    self.display_manager.update_display()
+            else:
+                # Static text (centered). Not scrolling: release the scroll
+                # state and its frame hold so the text is presented every
+                # refresh and deferred work can run.
+                self.display_manager.set_scrolling_state(False)
+                img = Image.new('RGB', (matrix_width, matrix_height), self.bg_color)
+                draw = ImageDraw.Draw(img)
+                draw.fontmode = "1"  # Pixel fonts on an LED panel: 1-bit text so every lit pixel is fully lit (no AA fringe).
+                bbox = draw.textbbox((0, 0), self.render_text, font=self.font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                x_pos = (matrix_width - text_width) // 2
+                y_pos = (matrix_height - text_height) // 2 - bbox[1]
+                draw.text((x_pos, y_pos), self.render_text, font=self.font, fill=self.text_color)
+                self.display_manager.image = img
+                self.display_manager.update_display()
+            
+        except Exception as e:
+            self.logger.error(f"Error displaying text: {e}")
+            # The scroll path sets the scroll state and frame hold before it
+            # draws; don't leave them set when drawing raised.
+            try:
+                self.display_manager.set_scrolling_state(False)
+            except Exception as release_error:
+                self.logger.debug(f"Could not release scroll state: {release_error}")
+
+    def _log_frame_rate(self):
+        """Log frame rate statistics for scrolling text."""
+        if not self.scroll_enabled:
+            return
+        
+        current_time = time.time()
+        
+        # Initialize timing on first call
+        if self.last_frame_time is None:
+            self.last_frame_time = current_time
+            self.last_fps_log_time = current_time
+            return
+        
+        # Calculate instantaneous frame time
+        frame_time = current_time - self.last_frame_time
+        self.frame_times.append(frame_time)
+        
+        # Keep only last 100 frames for average
+        if len(self.frame_times) > 100:
+            self.frame_times.pop(0)
+        
+        # Log FPS every 5 seconds to avoid spam
+        if current_time - self.last_fps_log_time >= 5.0:
+            avg_frame_time = sum(self.frame_times) / len(self.frame_times) if self.frame_times else frame_time
+            avg_fps = 1.0 / avg_frame_time if avg_frame_time > 0 else 0
+            instant_fps = 1.0 / frame_time if frame_time > 0 else 0
+            
+            self.logger.info(
+                f"Text display FPS - Avg: {avg_fps:.1f}, Current: {instant_fps:.1f}, "
+                f"Frame time: {frame_time*1000:.2f}ms"
+            )
+            self.last_fps_log_time = current_time
+            self.frame_count = 0
+        
+        self.last_frame_time = current_time
+        self.frame_count += 1
+    
+    def set_text(self, text: str):
+        """Update the displayed text."""
+        self.text = text
+        self.render_text = text
+        if self.font_mode == 'auto':
+            # New text may fit a different ladder rung
+            self.font = self._resolve_font()
+        self._calculate_text_dimensions()
+        self.text_image_cache = None
+        if self.scroll_helper:
+            self.scroll_helper.reset_scroll()
+        self.logger.info(f"Text updated to: '{text[:30]}...'")
+    
+    def get_display_duration(self) -> float:
+        """Get display duration from config or ScrollHelper's dynamic duration."""
+        # If scrolling is enabled and ScrollHelper has calculated a duration, use it
+        if self.scroll_enabled and self.scroll_helper and self.scroll_helper.total_scroll_width > 0:
+            dynamic_duration = self.scroll_helper.get_dynamic_duration()
+            if dynamic_duration > 0:
+                return float(dynamic_duration)
+        # Otherwise use the configured display duration
+        return self.display_duration
+    
+    def validate_config(self) -> bool:
+        """Validate plugin configuration."""
+        if not super().validate_config():
+            return False
+        
+        # Validate text is provided
+        if not self.text:
+            self.logger.error("No text specified")
+            return False
+        
+        # Validate colors
+        for color_name, color_value in [("text_color", self.text_color), ("background_color", self.bg_color)]:
+            if not isinstance(color_value, tuple) or len(color_value) != 3:
+                self.logger.error(f"Invalid {color_name}: must be RGB tuple")
+                return False
+            try:
+                # Convert to integers and validate range
+                color_ints = [int(c) for c in color_value]
+                if not all(0 <= c <= 255 for c in color_ints):
+                    self.logger.error(f"Invalid {color_name}: values must be 0-255")
+                    return False
+            except (ValueError, TypeError):
+                self.logger.error(f"Invalid {color_name}: values must be numeric")
+                return False
+        
+        return True
+    
+    def on_config_change(self, new_config: Dict[str, Any]) -> None:
+        """Handle configuration changes at runtime."""
+        super().on_config_change(new_config)
+        
+        # Update text if changed
+        new_text = new_config.get('text', self.text)
+        if new_text != self.text:
+            self.set_text(new_text)
+        
+        # Update scroll settings
+        old_scroll_enabled = self.scroll_enabled
+        old_gap = self.scroll_gap_width
+        self.scroll_enabled = new_config.get('scroll', self.scroll_enabled)
+        # The core reads enable_scrolling on every mode entry to choose the
+        # high-FPS loop. Set only in __init__, turning scrolling on here left
+        # the text crawling at one frame a second until a restart.
+        self.enable_scrolling = self.scroll_enabled
+        self.scroll_speed = float(new_config.get('scroll_speed', self.scroll_speed))
+        self.scroll_delay = float(new_config.get('scroll_delay', self.scroll_delay))
+        self.scroll_loop = new_config.get('scroll_loop', self.scroll_loop)
+        self.scroll_gap_width = int(new_config.get('scroll_gap_width', self.scroll_gap_width))
+        if self.scroll_gap_width != old_gap:
+            self.text_image_cache = None  # the gap is drawn into the strip
+
+        # Re-run the shared resolver on every save, exactly as at load. It
+        # reads self.config, which super() has just replaced, and resets the
+        # frame hold display() passes, so speed and hold cannot disagree.
+        if self.scroll_helper:
+            self._configure_scroll()
+
+        # Re-apply display_duration as the dynamic-duration floor so runtime edits
+        # take effect immediately (fall back to the current value so a partial
+        # config update can't reset it).
+        new_display_duration = float(new_config.get('display_duration', self.display_duration))
+        if new_display_duration != self.display_duration:
+            self.display_duration = new_display_duration
+            if self.scroll_helper:
+                self.scroll_helper.set_dynamic_duration_settings(
+                    enabled=True,
+                    min_duration=self.display_duration,
+                    max_duration=300,
+                    buffer=0.1
+                )
+                self.logger.info(f"display_duration updated: {self.display_duration}s")
+
+        # Reset scroll position if scroll was toggled
+        if old_scroll_enabled != self.scroll_enabled:
+            if self.scroll_helper:
+                self.scroll_helper.reset_scroll()
+            self.text_image_cache = None  # Invalidate cache when scroll state changes
+            self.logger.info(f"Scroll {'enabled' if self.scroll_enabled else 'disabled'}")
+        
+        # Update font settings if changed
+        new_font_mode = new_config.get('font_mode', self.font_mode)
+        if new_font_mode == 'auto' and AUTO_FONT_LADDER is None:
+            self.logger.warning(
+                "font_mode 'auto' requires a LEDMatrix core with the adaptive "
+                "layout system; staying on manual font settings"
+            )
+            new_font_mode = 'manual'
+        new_font_path = new_config.get('font_path', self.font_path)
+        new_font_size = new_config.get('font_size', self.font_size)
+        font_changed = (
+            new_font_mode != self.font_mode
+            or new_font_path != self.font_path
+            # In auto mode font_size holds the fitted size, not the config value
+            or (new_font_mode == 'manual' and new_font_size != self.font_size)
+            # Toggling scroll changes the auto-fit box (height-only vs both)
+            or (new_font_mode == 'auto' and old_scroll_enabled != self.scroll_enabled)
+        )
+        if font_changed:
+            self.font_mode = new_font_mode
+            self.font_path = new_font_path
+            self.font_size = new_font_size
+            self.font = self._resolve_font()
+            self._calculate_text_dimensions()
+            self.text_image_cache = None  # Invalidate cache when font changes
+            self._register_fonts()
+        
+        # Update colors if changed
+        try:
+            text_color_raw = new_config.get('text_color')
+            if text_color_raw:
+                new_text_color = tuple(int(c) for c in text_color_raw)
+                if new_text_color != self.text_color:
+                    self.text_color = new_text_color
+                    self.text_image_cache = None  # the strip holds the old colour
+            
+            bg_color_raw = new_config.get('background_color')
+            if bg_color_raw:
+                self.bg_color = tuple(int(c) for c in bg_color_raw)
+                self.text_image_cache = None  # Invalidate cache when background color changes
+        except (ValueError, TypeError) as e:
+            self.logger.warning(f"Invalid color values in config update: {e}")
+    
+    def get_info(self) -> Dict[str, Any]:
+        """Return plugin info for web UI."""
+        info = super().get_info()
+        # The speed actually applied: speed/delay as resolved and snapped to
+        # whole pixels per frame by the shared resolver.
+        settings = getattr(self, '_scroll_settings', None)
+        pixels_per_second = getattr(settings, 'pixels_per_second', 0.0) or 0.0
+        info.update({
+            'text': self.text[:50] if len(self.text) > 50 else self.text,
+            'text_width': self.text_width,
+            'scroll_enabled': self.scroll_enabled,
+            'scroll_speed': self.scroll_speed,  # pixels per step
+            'scroll_delay': self.scroll_delay,  # seconds per step
+            'pixels_per_second': round(pixels_per_second, 1),
+            'scroll_loop': self.scroll_loop,
+            'font_mode': self.font_mode,
+            'font_path': self.font_path,
+            'font_size': self.font_size
+        })
+        return info
+    
+    def cleanup(self) -> None:
+        """Cleanup resources."""
+        if self.scroll_helper:
+            self.scroll_helper.clear_cache()
+        self.text_image_cache = None
+        self.logger.info("Text display plugin cleaned up")
+

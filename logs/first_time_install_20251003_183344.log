@@ -1,0 +1,593 @@
+Logging to: /home/ledpi/LEDMatrix/logs/first_time_install_20251003_183344.log
+
+This script will perform the following steps:
+1. Install system dependencies
+2. Fix cache permissions
+3. Fix assets directory permissions
+4. Install main LED Matrix service
+5. Install Python project dependencies (requirements.txt)
+6. Build and install rpi-rgb-led-matrix and test import
+7. Install web interface dependencies
+8. Install web interface service
+9. Configure web interface permissions
+10. Configure passwordless sudo access
+11. Set up proper file ownership
+12. Configure sound module to avoid conflicts
+13. Apply performance optimizations
+14. Test the installation
+
+Do you want to proceed with the installation? (y/N): 
+
+Step 1: Installing system dependencies...
+----------------------------------------
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Hit:1 http://deb.debian.org/debian bookworm InRelease
+Hit:2 http://deb.debian.org/debian-security bookworm-security InRelease
+Hit:3 http://archive.raspberrypi.com/debian bookworm InRelease
+Hit:4 http://deb.debian.org/debian bookworm-updates InRelease
+Reading package lists...
+Building dependency tree...
+Reading state information...
+14 packages can be upgraded. Run 'apt list --upgradable' to see them.
+Installing Python packages and dependencies...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+python3-pip is already the newest version (23.0.1+dfsg-1+rpt1).
+python3-venv is already the newest version (3.11.2-1+b1).
+python3-dev is already the newest version (3.11.2-1+b1).
+python3-pil is already the newest version (9.4.0-1.1+deb12u1).
+python3-pil.imagetk is already the newest version (9.4.0-1.1+deb12u1).
+build-essential is already the newest version (12.9).
+python3-setuptools is already the newest version (66.1.1-1+deb12u2).
+python3-wheel is already the newest version (0.38.4-2).
+cython3 is already the newest version (0.29.32-2+b1).
+The following packages were automatically installed and are no longer required:
+  libpigpio-dev libpigpio1 libpigpiod-if-dev libpigpiod-if1 libpigpiod-if2-1
+  pigpio-tools pigpiod
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 14 not upgraded.
+Installing additional system dependencies...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+git is already the newest version (1:2.39.5-0+deb12u2).
+curl is already the newest version (7.88.1-10+deb12u14).
+wget is already the newest version (1.21.3-1+deb12u1).
+unzip is already the newest version (6.0-28).
+The following packages were automatically installed and are no longer required:
+  libpigpio-dev libpigpio1 libpigpiod-if-dev libpigpiod-if1 libpigpiod-if2-1
+  pigpio-tools pigpiod
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 14 not upgraded.
+✓ System dependencies installed
+
+Step 2: Fixing cache permissions...
+----------------------------------
+Running cache permissions fix...
+Fixing LEDMatrix cache directory permissions...
+
+Checking cache directory: /var/cache/ledmatrix
+  - Current permissions:
+drwxrwxrwx 3 ledpi ledpi 4096 Oct  3 18:26 /var/cache/ledmatrix
+  - Fixing permissions...
+  - Updated permissions:
+drwxrwxrwx 3 ledpi ledpi 4096 Oct  3 18:26 /var/cache/ledmatrix
+  - Testing write access as ledpi...
+    ✓ /var/cache/ledmatrix is now writable by ledpi
+  - Permissions fix complete for /var/cache/ledmatrix.
+
+Checking cache directory: /home/ledpi/.ledmatrix_cache
+  - Current permissions:
+drwxrwxrwx 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/.ledmatrix_cache
+  - Fixing permissions...
+  - Updated permissions:
+drwxrwxrwx 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/.ledmatrix_cache
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/.ledmatrix_cache is now writable by ledpi
+  - Permissions fix complete for /home/ledpi/.ledmatrix_cache.
+
+Setting up placeholder logos directory for sports managers...
+Placeholder logos directory already exists: /var/cache/ledmatrix/placeholder_logos
+  - Current permissions:
+drwxrwxrwx 2 ledpi ledpi 4096 Oct  3 15:56 /var/cache/ledmatrix/placeholder_logos
+  - Testing write access as ledpi...
+    ✓ Placeholder logos directory is writable by ledpi
+    ✓ Placeholder logos directory is writable by daemon user
+
+All cache directory permission fixes attempted.
+If you still see errors, check which user is running the LEDMatrix service and ensure it matches the owner above.
+
+The system will now create placeholder logos in:
+  /var/cache/ledmatrix/placeholder_logos
+This should eliminate the permission denied warnings for sports logos.
+✓ Cache permissions fixed
+
+Step 3: Fixing assets directory permissions...
+--------------------------------------------
+Running assets permissions fix...
+Fixing LEDMatrix assets directory permissions...
+Project directory: /home/ledpi/LEDMatrix
+Assets directory: /home/ledpi/LEDMatrix/assets
+Real user: ledpi
+Real group: ledpi
+
+Fixing permissions for assets directory and subdirectories...
+Setting ownership of assets directory...
+✓ Set assets directory ownership to ledpi:ledpi
+Setting permissions for assets directory...
+✓ Set assets directory permissions to 775
+
+Ensuring sports logo directories are writable...
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/ncaa_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 18:27 /home/ledpi/LEDMatrix/assets/sports/ncaa_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 18:27 /home/ledpi/LEDMatrix/assets/sports/ncaa_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/ncaa_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/nfl_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nfl_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nfl_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/nfl_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/nba_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nba_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nba_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/nba_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/nhl_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nhl_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nhl_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/nhl_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/mlb_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/mlb_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/mlb_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/mlb_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/milb_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/milb_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/milb_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/milb_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/soccer_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/soccer_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/soccer_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/soccer_logos is writable by ledpi
+
+Testing write access to ncaa_logos directory specifically...
+✓ Successfully created test file in ncaa_logos directory
+✓ Successfully removed test file
+
+Assets permissions fix completed!
+
+The application should now be able to download and save team logos.
+If you still see permission errors, check which user is running the LEDMatrix service
+and ensure it matches the owner above (ledpi).
+
+You may need to restart the LEDMatrix service for the changes to take effect:
+  sudo systemctl restart ledmatrix.service
+✓ Assets permissions fixed
+
+Step 4: Installing main LED Matrix service...
+---------------------------------------------
+Running main service installation...
+Installing LED Matrix Display Service for user: ledpi
+Using home directory: /home/ledpi
+Project root directory: /home/ledpi/LEDMatrix
+Enabling ledmatrix.service (main display) to start on boot...
+Starting ledmatrix.service (main display)...
+Installing LEDMatrix Web Interface service (ledmatrix-web.service)...
+Reloading systemd daemon for web service...
+Enabling ledmatrix-web.service to start on boot...
+Starting ledmatrix-web.service...
+LEDMatrix Web Interface service (ledmatrix-web.service) installation complete.
+It will start based on the 'web_display_autostart' setting in config/config.json.
+Service status for main display (ledmatrix.service):
+● ledmatrix.service - LED Matrix Display Service
+     Loaded: loaded (/etc/systemd/system/ledmatrix.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-10-03 18:26:54 BST; 7min ago
+   Main PID: 1828 (python3)
+      Tasks: 3 (limit: 3920)
+        CPU: 13min 2.246s
+     CGroup: /system.slice/ledmatrix.service
+             └─1828 /usr/bin/python3 /home/ledpi/LEDMatrix/display_controller.py
+
+Oct 03 18:33:56 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:12: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 18:33:56 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:13: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 18:33:57 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:12: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 18:33:57 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:13: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 18:33:57 ledpi ledmatrix[1828]: 18:33:57.495 - INFO:src.display_controller:Switching to music from text_display
+Oct 03 18:33:57 ledpi ledmatrix[1828]: 18:33:57.495 - INFO:src.display_controller:Showing music
+Oct 03 18:33:57 ledpi ledmatrix[1828]: 18:33:57.495 - INFO:src.display_controller:manager_to_display is MusicManager
+Oct 03 18:33:57 ledpi ledmatrix[1828]: 18:33:57.520 - INFO:src.music_manager:Music display activated.
+Oct 03 18:33:57 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:12: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 18:33:57 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:13: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Service status for web interface (ledmatrix-web.service):
+● ledmatrix-web.service - LED Matrix Web Interface (Conditional Start)
+     Loaded: loaded (/etc/systemd/system/ledmatrix-web.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-10-03 18:15:14 BST; 18min ago
+   Main PID: 612 (python3)
+      Tasks: 1 (limit: 3920)
+        CPU: 26.622s
+     CGroup: /system.slice/ledmatrix-web.service
+             └─612 /usr/bin/python3 /home/ledpi/LEDMatrix/web_interface_v2.py
+
+Oct 03 18:15:25 ledpi python3[654]: Requirement already satisfied: pyasn1-modules>=0.2.1 in /home/ledpi/.local/lib/python3.11/site-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 15)) (0.4.2)
+Oct 03 18:15:25 ledpi python3[654]: Requirement already satisfied: rsa<5,>=3.1.4 in /home/ledpi/.local/lib/python3.11/site-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 15)) (4.9.1)
+Oct 03 18:15:26 ledpi python3[654]: Requirement already satisfied: pyparsing<4,>=3.0.4 in /home/ledpi/.local/lib/python3.11/site-packages (from httplib2>=0.15.0->google-auth-httplib2==0.1.0->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 16)) (3.2.5)
+Oct 03 18:15:26 ledpi python3[654]: Requirement already satisfied: async-timeout>=4.0.3 in /home/ledpi/.local/lib/python3.11/site-packages (from redis>=3.5.3->spotipy->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 18)) (5.0.1)
+Oct 03 18:15:26 ledpi python3[654]: Requirement already satisfied: wsproto in /home/ledpi/.local/lib/python3.11/site-packages (from simple-websocket>=0.10.0->python-engineio->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 21)) (1.2.0)
+Oct 03 18:15:27 ledpi python3[654]: Requirement already satisfied: zope.interface in /home/ledpi/.local/lib/python3.11/site-packages (from datetime->icalevents->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 20)) (8.0.1)
+Oct 03 18:15:27 ledpi python3[654]: Requirement already satisfied: tzdata in /home/ledpi/.local/lib/python3.11/site-packages (from icalendar->icalevents->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 20)) (2025.2)
+Oct 03 18:15:27 ledpi python3[654]: Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /home/ledpi/.local/lib/python3.11/site-packages (from pyasn1-modules>=0.2.1->google-auth>=2.15.0->google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 15)) (0.6.1)
+Oct 03 18:15:28 ledpi python3[654]: Requirement already satisfied: h11<1,>=0.9.0 in /home/ledpi/.local/lib/python3.11/site-packages (from wsproto->simple-websocket>=0.10.0->python-engineio->-r /home/ledpi/LEDMatrix/requirements_web_v2.txt (line 21)) (0.16.0)
+Oct 03 18:16:01 ledpi python3[612]: INFO:__main__:Starting web interface on http://0.0.0.0:5001 (async_mode=eventlet)
+
+LED Matrix Services have been processed.
+
+To stop the main display when you SSH in:
+  sudo systemctl stop ledmatrix.service
+To stop the web interface:
+  sudo systemctl stop ledmatrix-web.service
+
+To check if the main display service is running:
+  sudo systemctl status ledmatrix.service
+To check if the web interface service is running:
+  sudo systemctl status ledmatrix-web.service
+
+To restart the main display service:
+  sudo systemctl restart ledmatrix.service
+To restart the web interface service:
+  sudo systemctl restart ledmatrix-web.service
+
+To view logs for the main display:
+  journalctl -u ledmatrix.service
+To view logs for the web interface:
+  journalctl -u ledmatrix-web.service
+
+To disable autostart for the main display:
+  sudo systemctl disable ledmatrix.service
+To disable autostart for the web interface:
+  sudo systemctl disable ledmatrix-web.service
+✓ Main LED Matrix service installed
+
+Step 4.1: Ensuring configuration files exist...
+------------------------------------------------
+✓ Main config file already exists
+✓ Secrets file already exists
+
+Step 5: Installing Python project dependencies...
+-----------------------------------------------
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: Pillow>=10.3.0 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 1)) (11.3.0)
+Requirement already satisfied: pytz==2023.3 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 2)) (2023.3)
+Requirement already satisfied: requests>=2.32.0 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (2.32.5)
+Requirement already satisfied: timezonefinder==6.2.0 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (6.2.0)
+Requirement already satisfied: geopy==2.4.1 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 5)) (2.4.1)
+Requirement already satisfied: google-auth-oauthlib==1.0.0 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (1.0.0)
+Requirement already satisfied: google-auth-httplib2==0.1.0 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 7)) (0.1.0)
+Requirement already satisfied: google-api-python-client==2.86.0 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 8)) (2.86.0)
+Requirement already satisfied: freetype-py==2.5.1 in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 9)) (2.5.1)
+Requirement already satisfied: spotipy in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 10)) (2.25.1)
+Requirement already satisfied: Flask in /usr/lib/python3/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 11)) (2.2.2)
+Requirement already satisfied: unidecode in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 12)) (1.4.0)
+Requirement already satisfied: icalevents in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 13)) (0.1.25)
+Requirement already satisfied: python-socketio in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 14)) (5.14.1)
+Requirement already satisfied: python-engineio in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 15)) (4.12.3)
+Requirement already satisfied: websockets in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 16)) (15.0.1)
+Requirement already satisfied: websocket-client in /usr/local/lib/python3.11/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 17)) (1.8.0)
+Requirement already satisfied: cffi<2,>=1.15.1 in /usr/local/lib/python3.11/dist-packages (from timezonefinder==6.2.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (1.17.1)
+Requirement already satisfied: h3<4,>=3.7.6 in /usr/local/lib/python3.11/dist-packages (from timezonefinder==6.2.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (3.7.7)
+Requirement already satisfied: numpy<2,>=1.18 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (1.24.2)
+Requirement already satisfied: setuptools>=65.5 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (66.1.1)
+Requirement already satisfied: geographiclib<3,>=1.52 in /usr/local/lib/python3.11/dist-packages (from geopy==2.4.1->-r /home/ledpi/LEDMatrix/requirements.txt (line 5)) (2.1)
+Requirement already satisfied: google-auth>=2.15.0 in /usr/local/lib/python3.11/dist-packages (from google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (2.41.1)
+Requirement already satisfied: requests-oauthlib>=0.7.0 in /usr/lib/python3/dist-packages (from google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (1.3.0)
+Requirement already satisfied: httplib2>=0.15.0 in /usr/local/lib/python3.11/dist-packages (from google-auth-httplib2==0.1.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 7)) (0.31.0)
+Requirement already satisfied: six in /usr/lib/python3/dist-packages (from google-auth-httplib2==0.1.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 7)) (1.16.0)
+Requirement already satisfied: google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 8)) (2.25.2)
+Requirement already satisfied: uritemplate<5,>=3.0.1 in /usr/lib/python3/dist-packages (from google-api-python-client==2.86.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 8)) (4.1.1)
+Requirement already satisfied: charset_normalizer<4,>=2 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (3.0.1)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (3.3)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (1.26.12)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (2022.9.24)
+Requirement already satisfied: redis>=3.5.3 in /usr/local/lib/python3.11/dist-packages (from spotipy->-r /home/ledpi/LEDMatrix/requirements.txt (line 10)) (6.4.0)
+Requirement already satisfied: icalendar in /usr/local/lib/python3.11/dist-packages (from icalevents->-r /home/ledpi/LEDMatrix/requirements.txt (line 13)) (6.3.1)
+Requirement already satisfied: datetime in /usr/local/lib/python3.11/dist-packages (from icalevents->-r /home/ledpi/LEDMatrix/requirements.txt (line 13)) (5.5)
+Requirement already satisfied: bidict>=0.21.0 in /usr/local/lib/python3.11/dist-packages (from python-socketio->-r /home/ledpi/LEDMatrix/requirements.txt (line 14)) (0.23.1)
+Requirement already satisfied: simple-websocket>=0.10.0 in /usr/local/lib/python3.11/dist-packages (from python-engineio->-r /home/ledpi/LEDMatrix/requirements.txt (line 15)) (1.1.0)
+Requirement already satisfied: pycparser in /usr/local/lib/python3.11/dist-packages (from cffi<2,>=1.15.1->timezonefinder==6.2.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (2.23)
+Requirement already satisfied: googleapis-common-protos<2.0.0,>=1.56.2 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 8)) (1.70.0)
+Requirement already satisfied: protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.0,>=3.19.5 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 8)) (6.32.1)
+Requirement already satisfied: proto-plus<2.0.0,>=1.22.3 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 8)) (1.26.1)
+Requirement already satisfied: cachetools<7.0,>=2.0.0 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (6.2.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (0.4.2)
+Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (4.9.1)
+Requirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/dist-packages (from httplib2>=0.15.0->google-auth-httplib2==0.1.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 7)) (3.2.5)
+Requirement already satisfied: async-timeout>=4.0.3 in /usr/local/lib/python3.11/dist-packages (from redis>=3.5.3->spotipy->-r /home/ledpi/LEDMatrix/requirements.txt (line 10)) (5.0.1)
+Requirement already satisfied: wsproto in /usr/local/lib/python3.11/dist-packages (from simple-websocket>=0.10.0->python-engineio->-r /home/ledpi/LEDMatrix/requirements.txt (line 15)) (1.2.0)
+Requirement already satisfied: zope.interface in /usr/local/lib/python3.11/dist-packages (from datetime->icalevents->-r /home/ledpi/LEDMatrix/requirements.txt (line 13)) (8.0.1)
+Requirement already satisfied: python-dateutil in /usr/local/lib/python3.11/dist-packages (from icalendar->icalevents->-r /home/ledpi/LEDMatrix/requirements.txt (line 13)) (2.9.0.post0)
+Requirement already satisfied: tzdata in /usr/local/lib/python3.11/dist-packages (from icalendar->icalevents->-r /home/ledpi/LEDMatrix/requirements.txt (line 13)) (2025.2)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /usr/local/lib/python3.11/dist-packages (from pyasn1-modules>=0.2.1->google-auth>=2.15.0->google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (0.6.1)
+Requirement already satisfied: h11<1,>=0.9.0 in /usr/local/lib/python3.11/dist-packages (from wsproto->simple-websocket>=0.10.0->python-engineio->-r /home/ledpi/LEDMatrix/requirements.txt (line 15)) (0.16.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+✓ Project Python dependencies installed
+
+Step 6: Building and installing rpi-rgb-led-matrix...
+-----------------------------------------------------
+rgbmatrix Python package already available; skipping build (set RPI_RGB_FORCE_REBUILD=1 to force rebuild).
+
+Step 7: Installing web interface dependencies...
+------------------------------------------------
+Installing Python dependencies for web interface...
+Using smart dependency installer...
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: websocket-client in /usr/local/lib/python3.11/dist-packages (1.8.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: timezonefinder==6.2.0 in /usr/local/lib/python3.11/dist-packages (6.2.0)
+Requirement already satisfied: cffi<2,>=1.15.1 in /usr/local/lib/python3.11/dist-packages (from timezonefinder==6.2.0) (1.17.1)
+Requirement already satisfied: h3<4,>=3.7.6 in /usr/local/lib/python3.11/dist-packages (from timezonefinder==6.2.0) (3.7.7)
+Requirement already satisfied: numpy<2,>=1.18 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0) (1.24.2)
+Requirement already satisfied: setuptools>=65.5 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0) (66.1.1)
+Requirement already satisfied: pycparser in /usr/local/lib/python3.11/dist-packages (from cffi<2,>=1.15.1->timezonefinder==6.2.0) (2.23)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: google-auth-oauthlib==1.0.0 in /usr/local/lib/python3.11/dist-packages (1.0.0)
+Requirement already satisfied: google-auth>=2.15.0 in /usr/local/lib/python3.11/dist-packages (from google-auth-oauthlib==1.0.0) (2.41.1)
+Requirement already satisfied: requests-oauthlib>=0.7.0 in /usr/lib/python3/dist-packages (from google-auth-oauthlib==1.0.0) (1.3.0)
+Requirement already satisfied: cachetools<7.0,>=2.0.0 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (6.2.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (0.4.2)
+Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (4.9.1)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /usr/local/lib/python3.11/dist-packages (from pyasn1-modules>=0.2.1->google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (0.6.1)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: google-auth-httplib2==0.1.0 in /usr/local/lib/python3.11/dist-packages (0.1.0)
+Requirement already satisfied: google-auth in /usr/local/lib/python3.11/dist-packages (from google-auth-httplib2==0.1.0) (2.41.1)
+Requirement already satisfied: httplib2>=0.15.0 in /usr/local/lib/python3.11/dist-packages (from google-auth-httplib2==0.1.0) (0.31.0)
+Requirement already satisfied: six in /usr/lib/python3/dist-packages (from google-auth-httplib2==0.1.0) (1.16.0)
+Requirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/dist-packages (from httplib2>=0.15.0->google-auth-httplib2==0.1.0) (3.2.5)
+Requirement already satisfied: cachetools<7.0,>=2.0.0 in /usr/local/lib/python3.11/dist-packages (from google-auth->google-auth-httplib2==0.1.0) (6.2.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /usr/local/lib/python3.11/dist-packages (from google-auth->google-auth-httplib2==0.1.0) (0.4.2)
+Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/dist-packages (from google-auth->google-auth-httplib2==0.1.0) (4.9.1)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /usr/local/lib/python3.11/dist-packages (from pyasn1-modules>=0.2.1->google-auth->google-auth-httplib2==0.1.0) (0.6.1)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: google-api-python-client==2.86.0 in /usr/local/lib/python3.11/dist-packages (2.86.0)
+Requirement already satisfied: httplib2<1dev,>=0.15.0 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (0.31.0)
+Requirement already satisfied: google-auth<3.0.0dev,>=1.19.0 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (2.41.1)
+Requirement already satisfied: google-auth-httplib2>=0.1.0 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (0.1.0)
+Requirement already satisfied: google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (2.25.2)
+Requirement already satisfied: uritemplate<5,>=3.0.1 in /usr/lib/python3/dist-packages (from google-api-python-client==2.86.0) (4.1.1)
+Requirement already satisfied: googleapis-common-protos<2.0.0,>=1.56.2 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (1.70.0)
+Requirement already satisfied: protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.0,>=3.19.5 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (6.32.1)
+Requirement already satisfied: proto-plus<2.0.0,>=1.22.3 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (1.26.1)
+Requirement already satisfied: requests<3.0.0,>=2.18.0 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (2.32.5)
+Requirement already satisfied: cachetools<7.0,>=2.0.0 in /usr/local/lib/python3.11/dist-packages (from google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (6.2.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /usr/local/lib/python3.11/dist-packages (from google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (0.4.2)
+Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/dist-packages (from google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (4.9.1)
+Requirement already satisfied: six in /usr/lib/python3/dist-packages (from google-auth-httplib2>=0.1.0->google-api-python-client==2.86.0) (1.16.0)
+Requirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/dist-packages (from httplib2<1dev,>=0.15.0->google-api-python-client==2.86.0) (3.2.5)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /usr/local/lib/python3.11/dist-packages (from pyasn1-modules>=0.2.1->google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (0.6.1)
+Requirement already satisfied: charset_normalizer<4,>=2 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (3.0.1)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (3.3)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (1.26.12)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (2022.9.24)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: spotipy in /usr/local/lib/python3.11/dist-packages (2.25.1)
+Requirement already satisfied: redis>=3.5.3 in /usr/local/lib/python3.11/dist-packages (from spotipy) (6.4.0)
+Requirement already satisfied: requests>=2.25.0 in /usr/local/lib/python3.11/dist-packages (from spotipy) (2.32.5)
+Requirement already satisfied: urllib3>=1.26.0 in /usr/lib/python3/dist-packages (from spotipy) (1.26.12)
+Requirement already satisfied: async-timeout>=4.0.3 in /usr/local/lib/python3.11/dist-packages (from redis>=3.5.3->spotipy) (5.0.1)
+Requirement already satisfied: charset_normalizer<4,>=2 in /usr/lib/python3/dist-packages (from requests>=2.25.0->spotipy) (3.0.1)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests>=2.25.0->spotipy) (3.3)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests>=2.25.0->spotipy) (2022.9.24)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: icalevents in /usr/local/lib/python3.11/dist-packages (0.1.25)
+Requirement already satisfied: httplib2 in /usr/local/lib/python3.11/dist-packages (from icalevents) (0.31.0)
+Requirement already satisfied: icalendar in /usr/local/lib/python3.11/dist-packages (from icalevents) (6.3.1)
+Requirement already satisfied: pytz in /usr/local/lib/python3.11/dist-packages (from icalevents) (2023.3)
+Requirement already satisfied: datetime in /usr/local/lib/python3.11/dist-packages (from icalevents) (5.5)
+Requirement already satisfied: zope.interface in /usr/local/lib/python3.11/dist-packages (from datetime->icalevents) (8.0.1)
+Requirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/dist-packages (from httplib2->icalevents) (3.2.5)
+Requirement already satisfied: python-dateutil in /usr/local/lib/python3.11/dist-packages (from icalendar->icalevents) (2.9.0.post0)
+Requirement already satisfied: tzdata in /usr/local/lib/python3.11/dist-packages (from icalendar->icalevents) (2025.2)
+Requirement already satisfied: six>=1.5 in /usr/lib/python3/dist-packages (from python-dateutil->icalendar->icalevents) (1.16.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: python-engineio in /usr/local/lib/python3.11/dist-packages (4.12.3)
+Requirement already satisfied: simple-websocket>=0.10.0 in /usr/local/lib/python3.11/dist-packages (from python-engineio) (1.1.0)
+Requirement already satisfied: wsproto in /usr/local/lib/python3.11/dist-packages (from simple-websocket>=0.10.0->python-engineio) (1.2.0)
+Requirement already satisfied: h11<1,>=0.9.0 in /usr/local/lib/python3.11/dist-packages (from wsproto->simple-websocket>=0.10.0->python-engineio) (0.16.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Installing dependencies for LED Matrix Web Interface V2...
+flask is already installed
+flask_socketio is already installed
+PIL is already installed
+socketio is already installed
+eventlet is already installed
+freetype is already installed
+psutil is already installed
+werkzeug is already installed
+numpy is already installed
+requests is already installed
+Trying to install python3-dateutil via apt...
+Successfully installed python3-dateutil via apt
+pytz is already installed
+geopy is already installed
+unidecode is already installed
+websockets is already installed
+Trying to install python3-websocket-client via apt...
+Failed to install websocket-client via apt, will try pip
+Installing websocket-client via pip...
+Successfully installed websocket-client via pip
+Installing timezonefinder==6.2.0 via pip...
+Successfully installed timezonefinder==6.2.0 via pip
+Installing google-auth-oauthlib==1.0.0 via pip...
+Successfully installed google-auth-oauthlib==1.0.0 via pip
+Installing google-auth-httplib2==0.1.0 via pip...
+Successfully installed google-auth-httplib2==0.1.0 via pip
+Installing google-api-python-client==2.86.0 via pip...
+Successfully installed google-api-python-client==2.86.0 via pip
+Installing spotipy via pip...
+Successfully installed spotipy via pip
+Installing icalevents via pip...
+Successfully installed icalevents via pip
+Installing python-engineio via pip...
+Successfully installed python-engineio via pip
+Installing rgbmatrix module...
+Warning: rgbmatrix source not found
+
+All dependencies installed successfully!
+✓ Web interface dependencies installed
+
+Step 8: Installing web interface service...
+-------------------------------------------
+ledmatrix-web.service already present; preserving existing configuration and skipping static installer
+
+Step 8.1: Setting systemd unit file permissions...
+-----------------------------------------------
+✓ Systemd unit file permissions set
+
+Step 9: Configuring web interface permissions...
+------------------------------------------------
+Adding user to systemd-journal group...
+User ledpi already in systemd-journal
+Adding user to adm group...
+User ledpi already in adm
+✓ User added to required groups
+
+Step 10: Configuring passwordless sudo access...
+------------------------------------------------
+Creating sudoers configuration...
+Sudoers configuration already up to date
+✓ Passwordless sudo access configured
+
+Step 11: Setting proper file ownership...
+----------------------------------------
+Setting project file ownership...
+✓ Config file permissions set
+✓ Secrets file permissions set
+✓ File ownership configured
+
+Step 11.1: Normalizing project file and directory permissions...
+--------------------------------------------------------------
+✓ Project file permissions normalized
+
+Step 12: Sound module configuration...
+-------------------------------------
+Removing potential conflicting services (bluetooth and others)...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Package 'bluez' is not installed, so not removed
+Package 'bluez-firmware' is not installed, so not removed
+Package 'pi-bluetooth' is not installed, so not removed
+Package 'triggerhappy' is not installed, so not removed
+Package 'pigpio' is not installed, so not removed
+The following packages were automatically installed and are no longer required:
+  libpigpio-dev libpigpio1 libpigpiod-if-dev libpigpiod-if1 libpigpiod-if2-1
+  pigpio-tools pigpiod
+Use 'sudo apt autoremove' to remove them.
+0 upgraded, 0 newly installed, 0 to remove and 14 not upgraded.
+✓ Unnecessary services removed (or not present)
+snd_bcm2835 already blacklisted in /etc/modprobe.d/blacklist-rgb-matrix.conf
+Updating initramfs...
+update-initramfs: Generating /boot/initrd.img-6.12.47+rpt-rpi-v8
+'/boot/initrd.img-6.12.47+rpt-rpi-v8' -> '/boot/firmware/initramfs8'
+update-initramfs: Generating /boot/initrd.img-6.12.47+rpt-rpi-2712
+'/boot/initrd.img-6.12.47+rpt-rpi-2712' -> '/boot/firmware/initramfs_2712'
+✓ Sound module configuration applied
+
+Step 13: Applying performance optimizations...
+---------------------------------------------
+isolcpus=3 already present in /boot/firmware/cmdline.txt
+Onboard audio already disabled in /boot/firmware/config.txt
+✓ Performance optimizations applied
+
+Step 14: Testing the installation...
+----------------------------------
+Testing sudo access...
+✓ Sudo access test passed
+Testing journal access...
+✓ Journal access test passed
+Checking service status...
+✓ Main LED Matrix service is running
+✓ Web interface service is running
+
+A reboot is recommended to apply kernel and audio changes. Reboot now? (y/N): 
+Rebooting now...
+==========================================
+Installation Complete!
+==========================================
+
+IMPORTANT: For group changes to take effect, you need to:
+1. Log out and log back in to your SSH session, OR
+2. Run: newgrp systemd-journal
+
+After logging back in, you can:
+
+Access the web interface at:
+  http://your-pi-ip:5001
+
+Check service status:
+  sudo systemctl status ledmatrix.service
+  sudo systemctl status ledmatrix-web.service
+
+View logs:
+  journalctl -u ledmatrix.service -f
+  journalctl -u ledmatrix-web.service -f
+
+Control the display:
+  sudo systemctl start ledmatrix.service
+  sudo systemctl stop ledmatrix.service
+
+Enable/disable web interface autostart:
+  Edit config/config.json and set 'web_display_autostart': true
+
+Configuration files:
+  Main config: config/config.json (created from template automatically)
+  Secrets: config/config_secrets.json (created from template automatically)
+  Template: config/config.template.json (reference for new options)
+
+Enjoy your LED Matrix display!

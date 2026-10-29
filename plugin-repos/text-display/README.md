@@ -1,0 +1,374 @@
+# Scrolling Text
+
+Put any message on your LED matrix — a greeting, an announcement, a ticker.
+Either scroll it continuously or sit it statically on the panel, in any font,
+size and colour.
+
+![The text "Subscribe to ChuckBuilds" fitted across a 128x32 panel in white on
+black](../../docs/assets/text-display/hero.png)
+
+*Every image in this README is real plugin output, rendered at the true panel
+size and then scaled up so the pixels stay pixels. Nothing here is a mockup.*
+
+---
+
+## Table of Contents
+
+1. [What's On Screen](#whats-on-screen)
+2. [Installation](#installation)
+3. [Quick Start](#quick-start)
+4. [Text and Sizing](#text-and-sizing)
+   - [font_mode](#font_mode)
+   - [font_path and font_size](#font_path-and-font_size)
+5. [Scrolling](#scrolling)
+   - [How fast it moves](#how-fast-it-moves)
+   - [Looping and the gap](#looping-and-the-gap)
+6. [Colours](#colours)
+7. [Timing](#timing)
+8. [Recipes](#recipes)
+9. [Panel Sizes](#panel-sizes)
+10. [Troubleshooting](#troubleshooting)
+11. [Development](#development)
+12. [Support](#support)
+
+---
+
+## What's On Screen
+
+One line of text, vertically centred, drawn either statically or scrolling
+right-to-left.
+
+Static text is centred horizontally. If it is wider than the panel it simply
+overflows both edges — the plugin does not shrink it for you unless you ask it
+to with [`font_mode: auto`](#font_mode), and does not wrap onto a second line.
+
+Scrolling text starts fully off the right edge and travels left, so at the
+instant a scroll begins the panel is legitimately empty.
+
+---
+
+## Installation
+
+**From the Plugin Store (recommended).** Open the LEDMatrix web interface at
+`http://<your-pi-ip>:5000`, go to **Plugin Manager**, find **Scrolling Text** in
+the **Plugin Store** section, and click **Install**.
+
+**Manually.** Copy this directory into your LEDMatrix `plugin-repos/` and
+restart the display service.
+
+`enabled` defaults to **`false`**, so nothing appears until you switch the
+plugin on.
+
+---
+
+## Quick Start
+
+```json
+{
+  "text-display": {
+    "enabled": true,
+    "text": "Welcome to the workshop"
+  }
+}
+```
+
+A fully specified configuration:
+
+```json
+{
+  "text-display": {
+    "enabled": true,
+    "text": "Subscribe to ChuckBuilds",
+    "font_mode": "auto",
+    "font_path": "assets/fonts/PressStart2P-Regular.ttf",
+    "font_size": 8,
+    "scroll": true,
+    "scroll_loop": true,
+    "scroll_speed": 1,
+    "scroll_delay": 0.01,
+    "scroll_gap_width": 32,
+    "text_color": [255, 255, 255],
+    "background_color": [0, 0, 0],
+    "display_duration": 10,
+    "update_interval": 60
+  }
+}
+```
+
+---
+
+## Text and Sizing
+
+| Option | Type | Default | What it does |
+|--------|------|---------|--------------|
+| `text` | string | `"Subscribe to ChuckBuilds"` | The message to display |
+| `font_mode` | string | `manual` | `manual` or `auto` — see below |
+| `font_path` | string | `assets/fonts/PressStart2P-Regular.ttf` | Font file, relative to the project root or absolute |
+| `font_size` | number | `8` | Size in pixels. **Manual mode only** |
+
+### `font_mode`
+
+This is the setting that decides whether you have to think about sizing at all.
+
+![Four panels comparing manual and auto font mode on long and short
+text](../../docs/assets/text-display/font-mode.png)
+
+- **`manual`** (the default) uses `font_size` exactly as configured. Long text
+  overflows the panel; short text stays small.
+- **`auto`** ignores `font_size` and picks the largest crisp size that fits the
+  panel. Long text is shrunk to fit; short text is grown to fill.
+
+`auto` is the right choice for a static message you want readable across a
+room, and for any text whose length you do not control. Stay on `manual` when
+you want a consistent size regardless of what the message says — a ticker that
+changes text should not change size with it.
+
+### `font_path` and `font_size`
+
+`font_path` accepts both TrueType (`.ttf`) and bitmap (`.bdf`) fonts:
+
+- **TTF** scales to any `font_size`. `PressStart2P-Regular.ttf` (the default) is
+  a chunky 8-bit face that stays legible at a distance; `4x6-font.ttf` fits far
+  more characters per line.
+- **BDF** is a bitmap face drawn at one fixed pixel size. It renders crisply,
+  but `font_size` cannot change it — the file's own size wins.
+
+![Four panels showing font_size 6, 8, 12 and 16 with the same long
+text](../../docs/assets/text-display/font-size.png)
+
+Larger sizes are more readable but fit less on the panel, which is what makes
+`scroll` or `font_mode: auto` necessary for anything longer than a word or two.
+
+---
+
+## Scrolling
+
+| Option | Type | Default | What it does |
+|--------|------|---------|--------------|
+| `scroll` | boolean | `true` | Scroll the text, or draw it statically |
+| `scroll_loop` | boolean | `true` | Loop continuously, or scroll once and stop |
+| `scroll_speed` | number | `1` | Pixels moved per step |
+| `scroll_delay` | number | `0.01` | Seconds per step |
+| `scroll_gap_width` | number | `32` | Blank pixels between the end and the restart |
+
+### How fast it moves
+
+Two settings set the speed together:
+
+```text
+pixels per second = scroll_speed / scroll_delay
+```
+
+So the defaults — 1 pixel every 0.01s — give 100 px/s.
+
+The LEDMatrix core then moves that figure to the nearest speed the panel can
+draw in whole pixels (on a 100Hz panel: 100, 50, 33.3, 66.7 px/s and so on),
+because anything in between either repeats frames or blends columns, and both
+read as judder. The speed it settled on is logged at startup and after every
+save as `Scroll configured: …`. It is kept between 1 and 500 px/s.
+
+- **`scroll_speed`** is pixels per *step*, not per second. Values in the tens in
+  an old config usually mean it was written when this was pixels-per-second.
+- **`scroll_delay`** is seconds per step. A smaller delay is faster; it does not
+  change how often the panel is redrawn.
+
+Speed changes saved in the web UI apply straight away, the same as after a
+restart.
+
+### Looping and the gap
+
+With `scroll_loop: true` the message repeats forever, and `scroll_gap_width`
+sets how much blank panel passes between the last character and the first
+coming round again. A gap roughly equal to your panel width gives the cleanest
+loop — the message is fully gone before it returns. The default of 32 suits a
+64-wide panel; on a 128-wide chain, try 128.
+
+With `scroll_loop: false` the text scrolls past once and stops. The turn is
+stretched to cover that pass (see [Timing](#timing)), and any time left over
+holds the parked end frame.
+
+> **A still cannot show motion.** There is no screenshot of scrolling in this
+> README because a single frame captured at the start of a scroll is an empty
+> panel — the text has not entered yet. That is correct behaviour, not a fault.
+
+---
+
+## Colours
+
+| Option | Type | Default | What it does |
+|--------|------|---------|--------------|
+| `text_color` | array | `[255, 255, 255]` | Text colour, `[R, G, B]` |
+| `background_color` | array | `[0, 0, 0]` | Panel background, `[R, G, B]` |
+
+![Four panels showing white, amber and green text, and black text on a red
+background](../../docs/assets/text-display/colors.png)
+
+A non-black `background_color` lights every pixel on the panel, which draws
+noticeably more power and is much brighter in a dark room. Use it for a
+deliberate alert, not as a default.
+
+---
+
+## Timing
+
+| Option | Type | Default | What it does |
+|--------|------|---------|--------------|
+| `display_duration` | number | `10` | Seconds the plugin holds the panel per turn; the minimum while scrolling |
+| `update_interval` | integer | `60` | Seconds between the core's calls to the plugin's `update()` |
+
+For scrolling text the plugin asks for a turn long enough for one full pass,
+using `display_duration` as the floor and 300 seconds as the ceiling, so a long
+message is not cut off mid-way. The turn it asks for is roughly:
+
+```text
+seconds ≈ 1.1 × (text width + 3 × panel width + scroll_gap_width) / (scroll_speed / scroll_delay)
+```
+
+Two exceptions: the first turn after a restart can come before the scrolling
+strip has been built, and then uses `display_duration` alone; and a duration
+set for this mode on the web UI's Rotation & Durations page replaces both.
+
+`update_interval` matters little here because the text is static configuration
+rather than fetched data. A settings save applies straight away whatever it is
+set to.
+
+---
+
+## Recipes
+
+**A static announcement.** Large, centred, no motion:
+
+```json
+{ "text": "WELCOME!", "scroll": false, "font_mode": "auto",
+  "text_color": [0, 255, 0] }
+```
+
+**A news-style ticker.** Long message, continuous loop, slightly quicker:
+
+```json
+{ "text": "Breaking: LED matrices are awesome. Stay tuned for more...",
+  "scroll": true, "scroll_speed": 1.5, "scroll_gap_width": 128,
+  "display_duration": 30 }
+```
+
+**A call to action.** Coloured, looping, sized to the panel:
+
+```json
+{ "text": "Subscribe to ChuckBuilds on YouTube!", "scroll": true,
+  "scroll_speed": 2, "text_color": [255, 0, 0] }
+```
+
+**A one-shot message.** Scrolls past once and stops, then hands the panel back:
+
+```json
+{ "text": "Build complete", "scroll": true, "scroll_loop": false,
+  "display_duration": 20 }
+```
+
+### Choosing a font for a panel
+
+Bitmap (`.bdf`) faces are drawn pixel-exact and stay crisp, which suits an LED
+matrix better than a scaled outline font. TrueType gives more choice and any
+size you like, at the cost of soft edges at awkward sizes. Whichever you pick,
+prefer a face designed for small sizes — a display font intended for print
+turns to mush below about 10 pixels.
+
+---
+
+## Panel Sizes
+
+![The same message on 64x32, 128x32, 128x64 and 256x32 panels in auto
+mode](../../docs/assets/text-display/panel-sizes.png)
+
+In `auto` mode the plugin uses whatever the panel gives it: a 64-wide panel
+forces a small face, while a 256-wide chain lets the same message render large.
+In `manual` mode the size is fixed, so a wider panel simply shows more of the
+message before it overflows.
+
+---
+
+## Troubleshooting
+
+**Nothing appears.**
+`enabled` defaults to `false`. Check it is `true`.
+
+**The panel is blank but I set text.**
+If `scroll` is on, the message begins off the right edge — a blank panel at the
+start of a pass is expected. If it stays blank, check `text_color` is not the
+same as `background_color`.
+
+**The text is cut off at both edges.**
+That is static `manual` mode with text wider than the panel. Switch to
+`font_mode: auto`, lower `font_size`, or turn on `scroll`.
+
+**Scrolling looks jumpy.**
+Fast speeds move several pixels at a time and slow ones hold each frame for
+several refreshes; both read as stepping. Check the `Scroll configured:` log
+line for what the speed resolved to, and move `scroll_speed / scroll_delay`
+towards 100 px/s, which is one pixel per refresh on a 100Hz panel. See
+[How fast it moves](#how-fast-it-moves).
+
+**The speed is not exactly what I set.**
+It is moved to the nearest speed the panel can draw in whole pixels — see
+[How fast it moves](#how-fast-it-moves).
+
+**I only ever see the middle of the message.**
+The turn is ending before a full pass completes. The plugin stretches its turn
+to one pass (up to 300 seconds), so check whether the Rotation & Durations page
+sets a fixed duration for `text_display`, and whether the pass is longer than
+300 seconds at your speed; raise the speed or shorten the text if so.
+
+**`font_size` has no effect.**
+Either `font_mode` is `auto` (which chooses the size itself) or `font_path`
+points at a `.bdf`, which is drawn at its own fixed pixel size.
+
+**The font did not change.**
+`font_path` is resolved relative to the LEDMatrix project root, not to the
+plugin directory. Check the log for a font-loading warning.
+
+---
+
+## Development
+
+### Project structure
+
+```text
+text-display/
+├── manifest.json        # Plugin metadata and version history
+├── manager.py           # TextDisplayPlugin
+├── config_schema.json   # Settings schema; source of truth for defaults
+└── README.md
+```
+
+Scrolling is delegated to the core's `ScrollHelper`, paced by the core's shared
+scroll resolver (`src.common.scroll_config`), which is the same mechanism the
+stock, news and leaderboard tickers use — so a given speed setting behaves the
+same here as in those.
+
+### Performance
+
+Scrolling redraws the panel every frame, so it costs meaningfully more CPU than
+static text. On a Raspberry Pi driving a large chain, prefer the default
+`scroll_delay` of `0.01` over lower values, and remember that a non-black
+`background_color` lights every pixel.
+
+### Regenerating the images in this README
+
+```bash
+python scripts/render_docs_assets.py --plugin text-display
+```
+
+`--check` verifies the committed images still match what the plugin renders.
+
+---
+
+## Support
+
+- YouTube: <https://www.youtube.com/@ChuckBuilds>
+- Instagram: <https://www.instagram.com/ChuckBuilds/>
+- Discord: <https://discord.com/invite/uW36dVAtcT>
+- Sponsor: [GitHub Sponsors](https://github.com/sponsors/ChuckBuilds) ·
+  [Buy Me a Coffee](https://buymeacoffee.com/chuckbuilds) ·
+  [Ko-fi](https://ko-fi.com/chuckbuilds/)
+
+Released under the GNU General Public License v3.0 — see [LICENSE](LICENSE).

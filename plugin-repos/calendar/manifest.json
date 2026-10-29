@@ -1,0 +1,171 @@
+{
+  "id": "calendar",
+  "name": "Google Calendar",
+  "version": "1.2.12",
+  "author": "ChuckBuilds",
+  "description": "Display upcoming events from Google Calendar with date, time, and event details. Shows next 1-3 events with automatic rotation and timezone support.",
+  "category": "productivity",
+  "tags": [
+    "calendar",
+    "google",
+    "events",
+    "schedule",
+    "appointments"
+  ],
+  "entry_point": "manager.py",
+  "class_name": "CalendarPlugin",
+  "config_schema": "config_schema.json",
+  "display_modes": [
+    "calendar"
+  ],
+  "web_ui_actions": [
+    {
+      "id": "authenticate-google",
+      "type": "script",
+      "title": "Step 2: Authenticate with Google",
+      "description": "Click to generate an authorization link. Visit the link in your browser, authorize access, then paste the code back here.",
+      "button_text": "Authenticate Google Calendar",
+      "icon": "fab fa-google",
+      "color": "blue",
+      "script": "calendar_registration.py",
+      "step2_prompt": "Paste the authorization code from Google:",
+      "step2_button_text": "Complete Authentication",
+      "success_message": "Google Calendar authentication completed successfully",
+      "error_message": "Google Calendar authentication failed"
+    }
+  ],
+  "versions": [
+    {
+      "version": "1.2.12",
+      "released": "2026-10-03",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "The events cache key now carries a short hash of the selected calendar IDs instead of the IDs themselves. The key becomes a filename, and with a few long Google calendar IDs (holidays, sports) it ran past the 255-byte filename limit, so every write failed with 'Could not write cache' and the calendar refetched from Google on every update. Core floor unchanged."
+    },
+    {
+      "version": "1.2.11",
+      "released": "2026-10-02",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Events merged from several calendars are ordered by when they actually start. They were sorted by the start text, and each calendar writes its times with its own UTC offset, so a 10:00-07:00 event sorted ahead of a 12:00-04:00 one that starts an hour earlier -- and with max_events applied after the sort, the earlier event could be dropped. The code default for the date/time font now matches the schema (PressStart2P); a normal load merges the schema default, so rendering is unchanged. README: the setup step no longer cites the removed run_local_server() call, the web sign-in step describes pasting back the 127.0.0.1 address, the registration script is noted as needing a desktop browser, token_file is noted as best left at its default (sign-in always writes token.pickle), and the update-interval and long-title notes match the code (default 3600s; titles wrap to as many lines as fit). Core floor unchanged."
+    },
+    {
+      "version": "1.2.10",
+      "released": "2026-10-02",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Drops its get_supported_vegas_modes() override, which LEDMatrix core deprecated and removes in 3.9.0. Core never read it; Vegas still takes the calendar's participation from get_vegas_display_mode() and get_vegas_content_type(), so behaviour is unchanged. Core floor unchanged."
+    },
+    {
+      "version": "1.2.9",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Without the Google client libraries the plugin now disables itself cleanly: __init__ returned before setting the state update(), display() and get_info() read, so each raised AttributeError, including the web UI's plugin listing."
+    },
+    {
+      "version": "1.2.8",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Saved settings now apply without a restart. The core applies a web-UI save by calling on_config_change, not by reloading the plugin, and the base version only replaces self.config, so the calendars, event count, rotation interval and fonts kept their old values. They are re-read on save; sign-in is left alone, and a changed calendar list is fetched on the next update."
+    },
+    {
+      "version": "1.2.7",
+      "released": "2026-09-15",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Never start an interactive OAuth flow at runtime: when the saved token could not be refreshed, plugin load called InstalledAppFlow.run_local_server(), which on a headless Pi waits for a browser callback with no timeout. The plugin now logs what to do and the panel shows 'Auth needed / See web UI' until the web UI's Authenticate Google Calendar action (calendar_registration.py) has run. Events are fetched from now rather than from the start of today, so events already over no longer use up max_events. Also removes the dead get_manager_font branch (not a core API) and the unreferenced get_calendars method, and gitignores the PKCE .pkce_code_verifier file."
+    },
+    {
+      "version": "1.2.6",
+      "released": "2026-09-05",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Validation-sweep fixes; see the PR for the specific defect."
+    },
+    {
+      "released": "2026-09-03",
+      "version": "1.2.5",
+      "changelog": "Render text 1-bit (no anti-aliasing) so glyphs stay crisp on the LED grid",
+      "ledmatrix_min_version": "3.3.0"
+    },
+    {
+      "version": "1.2.4",
+      "released": "2026-09-02",
+      "notes": "Documentation. The README's three ASCII mock-ups of the display are replaced with real rendered screenshots of the same four screens (timed, all-day, a long title being ellipsized, and the empty state) plus a panel-size sheet. Documents google_auth, which is the web UI's Connect Your Google Account button rather than a value you type, and splits the two combined font rows so each customization key appears on its own. All 13 schema settings are now documented by key.",
+      "ledmatrix_min_version": "3.3.0"
+    },
+    {
+      "version": "1.2.3",
+      "released": "2026-08-31",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Restores the minimum-core requirement that 1.2.0 declared. That release added the device-authorization step to the setup flow and needs the calendar_registration endpoints the core gained after 3.2.0, so it floored at 3.3.0. The two bug-fix releases after it, 1.2.1 and 1.2.2, each wrote a fresh versions[] entry declaring 2.0.0 -- and because the core reads the floor from versions[0] alone, the requirement disappeared the moment 1.2.1 shipped. A floor is cumulative: the feature that needs the newer core is still in the plugin. The store will now refuse to install this on a core older than 3.3.0 rather than handing over a setup flow whose Step 2 cannot work.",
+      "changelog": "Restores the minimum-core requirement that 1.2.0 declared. That release added the device-authorization step to the setup flow and needs the calendar_registration endpoints the core gained after 3.2.0, so it floored at 3.3.0. The two bug-fix releases after it, 1.2.1 and 1.2.2, each wrote a fresh versions[] entry declaring 2.0.0 -- and because the core reads the floor from versions[0] alone, the requirement disappeared the moment 1.2.1 shipped. A floor is cumulative: the feature that needs the newer core is still in the plugin. The store will now refuse to install this on a core older than 3.3.0 rather than handing over a setup flow whose Step 2 cannot work."
+    },
+    {
+      "released": "2026-08-15",
+      "version": "1.2.2",
+      "notes": "Ignore credentials.json and token.pickle in the plugin .gitignore so local Google OAuth artifacts cannot be committed by accident.",
+      "ledmatrix_min_version": "2.0.0",
+      "changelog": "Fixes the event display pulsing: the plugin cleared the physical panel before every frame it rendered, so the display went black between redraws. Frames are now composed off-panel and swapped in."
+    },
+    {
+      "released": "2026-08-15",
+      "version": "1.2.1",
+      "notes": "Ignore credentials.json and token.pickle in the plugin .gitignore so local Google OAuth artifacts cannot be committed by accident.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.2.0",
+      "released": "2026-08-13",
+      "ledmatrix_min_version": "3.3.0",
+      "notes": "Add the missing Step 2 to the setup. The config advertised Step 1 (upload credentials) and Step 3 (pick calendars) with nothing between them, so there was no way to actually authorize the device from the web UI -- and Step 3 could only ever fail, since it needs the token Step 2 produces. calendar_registration.py already handled this flow; it simply had no field to drive it. Requires the core endpoints from LEDMatrix#458; the floor assumes they ship in 3.3.0, the next minor after the current 3.2.0."
+    },
+    {
+      "released": "2026-07-28",
+      "version": "1.1.6",
+      "notes": "Fix Google Calendar auth failing with 'invalid_grant: Missing code verifier'. The web-UI flow runs as two separate processes, but the PKCE code_verifier generated while building the auth URL was never carried into the token-exchange step. It is now persisted between the two steps (and cleaned up afterward).",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-07-17",
+      "version": "1.1.5",
+      "notes": "Config schema reorganized for a clearer setup experience: fine-tuning fields moved behind the web UI's collapsed Advanced Settings section (x-advanced). UX-only; no fields, defaults, or behavior changed.",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-13",
+      "version": "1.1.4",
+      "notes": "Fix event titles silently dropping trailing wrapped lines on narrow panels (e.g. 'Team Standup Meeting' showed only 'Team'/'Standup' at 64x32, with no sign 'Meeting' ever existed) -- the last visible line now ellipsizes ('Stan...') instead. Also brightened the 'No Events' fallback text from a dim (150,150,150) to (220,220,220) for better contrast.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-07-08",
+      "version": "1.1.3",
+      "notes": "Document the config in a per-key table (including the previously-undocumented customization fonts), add web-UI titles to the untitled options (Max Events, Show All-Day Events, durations, Update Interval), and normalize the versions changelog key to ledmatrix_min_version.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-05-15",
+      "version": "1.1.2",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-04-24",
+      "version": "1.1.1",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-03-02",
+      "version": "1.1.0",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2025-10-19",
+      "version": "1.0.1",
+      "ledmatrix_min_version": "2.0.0"
+    }
+  ],
+  "last_updated": "2026-10-02",
+  "stars": 0,
+  "downloads": 0,
+  "verified": true,
+  "screenshot": "",
+  "compatible_versions": [
+    ">=3.3.0"
+  ]
+}

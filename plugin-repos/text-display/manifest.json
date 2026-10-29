@@ -1,0 +1,132 @@
+{
+  "id": "text-display",
+  "name": "Text Display",
+  "version": "1.3.3",
+  "author": "ChuckBuilds",
+  "description": "Display custom scrolling or static text with configurable fonts, colors, and scroll speed. Perfect for announcements, messages, or custom displays.",
+  "category": "display",
+  "tags": [
+    "text",
+    "scroll",
+    "message",
+    "display",
+    "custom"
+  ],
+  "display_modes": [
+    "text_display"
+  ],
+  "entry_point": "manager.py",
+  "class_name": "TextDisplayPlugin",
+  "display": {
+    "design_size": {
+      "width": 128,
+      "height": 32
+    }
+  },
+  "versions": [
+    {
+      "version": "1.3.3",
+      "released": "2026-10-02",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "README only. Scrolling text already stretches its turn to one full pass (display_duration is the floor, 300 seconds the ceiling), so the advice to raise display_duration to fit a pass, and the pass-length formula, were wrong; the timing section now describes what happens, including the Rotation & Durations override. update_interval does not decide how quickly a settings change is picked up: a save applies straight away."
+    },
+    {
+      "version": "1.3.2",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Turning scrolling on in the settings now scrolls at full speed: on_config_change updated scroll_enabled but not enable_scrolling, which the core reads to choose the high-FPS loop, so the text crawled at one frame a second until a restart. A new text colour or scroll gap also redraws the scrolling strip; only a new background colour used to."
+    },
+    {
+      "version": "1.3.1",
+      "released": "2026-09-16",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Scroll frames stay paced by the panel for the whole slot. With scroll_loop off, display() released the scroll state and frame hold once the one-shot scroll finished, while it kept drawing the parked end frame. Core then skipped each identical frame without waiting for vsync, so the controller's loop ran unpaced (125 fps on a 100 Hz panel) for the rest of the slot and the frame hold was dropped. The state is now kept on every frame scrolling text is on screen, as odds-ticker 1.7.1 does; static text, empty text and a frame that fails to draw still release it. The plugin also loads when LEDMatrix's hardware init failed: it read display_manager.matrix.width, and matrix is None then (the hasattr guard did not catch that); it now reads display_manager.width and height. Requires LEDMatrix core 3.4.0, as before."
+    },
+    {
+      "released": "2026-09-15",
+      "version": "1.3.0",
+      "changelog": ".bdf fonts render. font_path accepts .bdf, but the plugin loaded one as a bare freetype.Face, which PIL cannot draw or measure with: at the font's own size every frame raised and the panel stayed blank, and at any other size loading failed and the default font was used instead. .bdf files now load through PIL at the pixel size the file declares, the loader clock-simple, countdown and calendar already use. Saving a speed change in the web UI now re-runs the core's scroll resolver, as a restart does. It used to push the old frame-based speed onto the scroll helper, which dropped the resolver's whole-pixel step and kept the previous frame hold, so an edited speed moved differently until the next restart. Static text, empty text and a frame that fails to draw now release the scroll state (and its frame hold) instead of leaving it to the core's inactivity timeout. target_fps is ignored: nothing in the core reads the value it set, so it never changed how text moved. It is kept for compatibility and ignored (still shown in the settings form, marked deprecated), so saved configs that carry it keep validating. Requires LEDMatrix core 3.4.0, as before.",
+      "ledmatrix_min_version": "3.4.0"
+    },
+    {
+      "released": "2026-09-15",
+      "version": "1.2.0",
+      "changelog": "Requires LEDMatrix core 3.4.0 or newer, because scrolling text uses the new scroll frame pacing. Since 1.1.8 display() passes frame_hold to display_manager.set_scrolling_state(), an argument core 3.3.x does not have; the call sits inside the try that wraps the whole frame, so on those cores every scrolling frame raised TypeError, logged an error and drew nothing. The manifest still admitted any core from 2.0.0, so the store kept offering it there. The floor is now 3.4.0 (versions[0] and compatible_versions), so the store refuses the install on an older core and asks the user to update LEDMatrix first. A copy already installed on a 3.3.x core stays broken until that core is updated. No code change.",
+      "ledmatrix_min_version": "3.4.0"
+    },
+    {
+      "released": "2026-09-07",
+      "version": "1.1.8",
+      "changelog": "Resolve scroll speed through the shared resolver and apply the frame hold it reports, so slow speeds move whole pixels",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-09-03",
+      "version": "1.1.7",
+      "changelog": "Render text 1-bit (no anti-aliasing) so glyphs stay crisp on the LED grid",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.1.6",
+      "released": "2026-09-02",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "version": "1.1.5",
+      "released": "2026-07-31",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-20",
+      "version": "1.1.4",
+      "ledmatrix_min": "2.0.0",
+      "notes": "display_duration is a time value, so preserve fractional seconds (float instead of int) when used as the dynamic-scroll duration floor, and re-apply it on runtime config changes so live edits take effect immediately."
+    },
+    {
+      "released": "2026-07-19",
+      "version": "1.1.3",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Fix scrolling text never scrolling when scroll_gap_width is stored as a float (the web UI persists the \"number\" schema type as e.g. 32.0): int-coerce scroll_gap_width on read and guard cache_width before Image.new(), which was crashing every frame. Also honor display_duration as the dynamic-duration floor instead of a hardcoded 10."
+    },
+    {
+      "released": "2026-07-17",
+      "version": "1.1.2",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Config schema reorganized for a clearer setup experience: fine-tuning fields moved behind the web UI's collapsed Advanced Settings section (x-advanced). UX-only; no fields, defaults, or behavior changed."
+    },
+    {
+      "released": "2026-07-10",
+      "version": "1.1.1",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Fix font_mode auto rendering visibly antialiased/blurry text on small panels: dropped 5by7.regular (never crisp at any tested size) and corrected 4x6-font from 6px to 7px (its actual crisp native size)."
+    },
+    {
+      "released": "2026-07-09",
+      "version": "1.1.0",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-05-15",
+      "version": "1.0.3",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-04-07",
+      "version": "1.0.2",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2025-10-19",
+      "version": "1.0.1",
+      "ledmatrix_min_version": "2.0.0"
+    }
+  ],
+  "last_updated": "2026-10-02",
+  "stars": 0,
+  "downloads": 0,
+  "verified": true,
+  "screenshot": "",
+  "compatible_versions": [
+    ">=3.4.0"
+  ]
+}

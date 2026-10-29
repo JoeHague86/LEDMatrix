@@ -1,0 +1,90 @@
+{
+  "id": "clock-simple",
+  "name": "Simple Clock",
+  "version": "1.1.4",
+  "author": "ChuckBuilds",
+  "description": "A simple clock display with current time and date",
+  "category": "time",
+  "tags": [
+    "clock",
+    "time",
+    "date"
+  ],
+  "entry_point": "manager.py",
+  "class_name": "SimpleClock",
+  "display_modes": [
+    "clock-simple"
+  ],
+  "versions": [
+    {
+      "version": "1.1.4",
+      "released": "2026-10-02",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "README only. It said the clock picks a smaller size to fit and draws the time larger when show_date is off; neither happens -- only the weekday and date are shortened to fit, and the time keeps its font and position. Also corrects update_interval (it has no visible effect, since the time is re-read every frame), the timezone fallback when nothing is set (UTC, not the host zone), which numeric date format falls back to MM-DD, and the class name in the file listing. No change in behaviour."
+    },
+    {
+      "version": "1.1.3",
+      "released": "2026-09-29",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Manifest is ASCII-only again. The em dashes in earlier release notes are now stored as JSON escape sequences, which read back as the same text. Tools that open manifest.json in the platform's default encoding (cp1252 on Windows: LEDMatrix cores before 3.4.0, the core's scripts/dev_server.py) turned the raw bytes into garbage characters. No change in behaviour."
+    },
+    {
+      "version": "1.1.2",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Saved settings now apply without a restart. The core applies a web-UI save by calling on_config_change, not by reloading the plugin, and the base version only replaces self.config, so format, colours, fonts, position and timezone kept their old values. __init__ only reads config and loads local assets, so on_config_change runs it again."
+    },
+    {
+      "version": "1.1.1",
+      "released": "2026-09-15",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "position_x and position_y now move the clock, as the README always said: they were read and never used. The whole rendered frame is shifted by the offsets and clipped at the edges; the default 0/0 renders exactly as before. The offsets are clamped to one panel size in code, so a large hand-edited value cannot push the clock arbitrarily far; the schema sets no limit, so any previously stored value stays valid. An unrecognised timezone string now logs a warning and falls back to the LEDMatrix timezone, then system time, instead of failing validate_config -- which made core refuse to load the plugin, so a typo blanked the clock."
+    },
+    {
+      "version": "1.1.0",
+      "released": "2026-09-02",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "version": "1.0.10",
+      "released": "2026-07-31",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-21",
+      "version": "1.0.8",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Actually stop the per-second flash. The previous fix only avoided a full hardware clear on unchanged frames, but it still called display_manager.clear() whenever the visible content changed \u2014 and clear() writes black straight to the panel's front buffer, so the panel blanked between the clear and the redraw on the core's ~1 Hz loop. With seconds shown that content changes every second, so it flashed every second (and once a minute otherwise). The clock now rebuilds each frame on a fresh in-memory buffer and lets update_display() swap it in atomically (SwapOnVSync); dirty-tracking skips the push when pixels are unchanged. No hardware clear, so the panel never blanks \u2014 whether or not seconds are shown."
+    },
+    {
+      "released": "2026-07-19",
+      "version": "1.0.7",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Fix the clock flashing/blinking periodically. The plugin now redraws its content on every render tick and only clears the buffer when the displayed time or date changes, instead of skipping frames \u2014 so the panel stays lit steadily regardless of update_interval. Also fit the time/AM-PM and date to the panel width so content no longer overflows the edge on narrow (64px-wide) matrices; the weekday and date are abbreviated only when the full text wouldn't fit, so wider panels are unchanged."
+    },
+    {
+      "released": "2026-07-17",
+      "version": "1.0.6",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Config schema reorganized for a clearer setup experience: fine-tuning fields moved behind the web UI's collapsed Advanced Settings section (x-advanced). UX-only; no fields, defaults, or behavior changed."
+    },
+    {
+      "released": "2026-05-15",
+      "version": "1.0.5",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2025-10-19",
+      "version": "1.0.4",
+      "ledmatrix_min_version": "2.0.0"
+    }
+  ],
+  "last_updated": "2026-10-02",
+  "stars": 0,
+  "downloads": 0,
+  "verified": true,
+  "screenshot": "",
+  "compatible_versions": [
+    ">=2.0.0"
+  ]
+}

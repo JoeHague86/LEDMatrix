@@ -1,0 +1,166 @@
+{
+  "id": "ledmatrix-stocks",
+  "name": "Stock & Crypto Ticker",
+  "version": "2.11.3",
+  "description": "Displays stock tickers with prices, changes, and optional charts for stocks and cryptocurrencies. Supports scroll and switch display modes.",
+  "author": "LEDMatrix Team",
+  "homepage": "https://github.com/ChuckBuilds/ledmatrix-plugins/tree/main/plugins/ledmatrix-stocks",
+  "entry_point": "manager.py",
+  "class_name": "StockTickerPlugin",
+  "category": "finance",
+  "tags": [
+    "stocks",
+    "crypto",
+    "finance",
+    "ticker",
+    "scrolling"
+  ],
+  "icon": "fas fa-chart-line",
+  "compatible_versions": [
+    ">=3.4.0"
+  ],
+  "min_ledmatrix_version": "3.4.0",
+  "requires": {
+    "python": ">=3.9"
+  },
+  "config_schema": "config_schema.json",
+  "requirements_file": "requirements.txt",
+  "update_interval": 600,
+  "display_modes": [
+    "stocks"
+  ],
+  "api_requirements": [
+    {
+      "name": "Yahoo Finance API",
+      "required": true,
+      "description": "Yahoo Finance API for stock and cryptocurrency data",
+      "rate_limit": "Please use responsibly"
+    }
+  ],
+  "versions": [
+    {
+      "version": "2.11.3",
+      "released": "2026-10-02",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Switch mode no longer draws the price over the logo. The text was centered on the whole panel, so on a 64-wide panel it covered the logo and on 128 wide the change line ran into it. The text is now centered beside the logo, which shrinks to fit the widest line and is left out when there is no room for it. README: the inline chart is drawn in scroll mode only."
+    },
+    {
+      "version": "2.11.2",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Quotes refresh on schedule: the cache was read with max_age equal to the update interval, and each entry is written partway through an update, so at the next scheduled update it was still fresh and every symbol refreshed only every other time. It is now reused for half the interval. Crypto has its own cache key, so stock SOL and crypto SOL-USD (both shown as SOL) no longer share a quote. Prices and changes under $0.10 keep four significant digits instead of rounding to $0.00; from $0.10 up they draw exactly as before."
+    },
+    {
+      "version": "2.11.1",
+      "released": "2026-09-17",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "The stock ticker no longer floods the log while it waits for its first data. display() runs at the scroll frame rate, and an empty data set logged 'No stock data available' on every frame -- 592 to 1010 identical lines in the second before the first fetch landed, burying real errors in the journal. It was never a fetch failure: the data arrived and the ticker scrolled normally. The warning is now one line per gap, with an info line when the data comes back."
+    },
+    {
+      "version": "2.11.0",
+      "released": "2026-09-15",
+      "notes": "update_interval is honoured: the manifest's 600 used to win over the configured value, so an interval below 600 did nothing; get_update_interval() now returns it. crypto.update_interval works: crypto quotes are cached for it and the plugin asks to update at the shorter of the two intervals (it was read and never used). Web-UI saves apply without a restart (new on_config_change: symbols, fonts, colours, chart and scroll speed; the scroll resolver re-runs). Scroll pacing comes only from the core's resolver: the pre-resolver speed path and the set_scroll_speed / set_scroll_delay methods that overwrote it are removed. The \"No Data Available\" message fits the panel instead of running off both edges, and releases the scroll state. Declared settings the code already read but the schema did not, so the web UI stripped them on save: show_change, show_percentage, crypto.show_change, crypto.show_percentage, and api.timeout / retry_count / rate_limit_delay. stocks.display_format and crypto.display_format, whose placeholders nothing used (the layout is fixed), are kept for compatibility and ignored (still shown in the settings form, marked deprecated), so saved configs that carry them stay valid. Removed dead code: chart_renderer.py (built, never drawn with; the chart comes from display_renderer), a background-service path that called a method the core service does not have, an unused HTML-JSON extractor, the unused API and text helpers, _get_stock_color, and get_info's hard-coded name and 2.2.0 version. Requires LEDMatrix core 3.4.0, as before.",
+      "ledmatrix_min_version": "3.4.0"
+    },
+    {
+      "version": "2.10.0",
+      "released": "2026-09-15",
+      "notes": "Requires LEDMatrix core 3.4.0 or newer, because the ticker uses the new scroll frame pacing. Since 2.9.1 the scroll mode passes frame_hold to display_manager.set_scrolling_state(), an argument core 3.3.x does not have, so on those cores every scroll frame raised TypeError and the ticker stayed blank. The manifest still admitted any core from 2.0.0, so the store kept offering it there. The floor is now 3.4.0 (min_ledmatrix_version, versions[0] and compatible_versions), so the store refuses the install on an older core and asks the user to update LEDMatrix first. A copy already installed on a 3.3.x core stays broken until that core is updated. Also drops max_ledmatrix_version 3.0.0, which nothing reads and which contradicted a 3.x floor. No code change.",
+      "ledmatrix_min_version": "3.4.0"
+    },
+    {
+      "version": "2.9.1",
+      "released": "2026-09-07",
+      "notes": "Scroll speed is resolved through the core's shared scroll resolver (src.common.scroll_config) when the core has it, which snaps the speed to one the panel can draw in whole pixels, and the frame hold it reports is passed to set_scrolling_state() each time scrolling starts, so slow speeds stay crisp (#462). Cores without the resolver keep the previous speed arithmetic. This entry was missing when 2.9.1 shipped. Note that the frame_hold argument needs core 3.4.0; 2.10.0 raises the floor to match.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "2.9.0",
+      "released": "2026-09-03",
+      "notes": "Bitmap fonts and documentation. A .bdf face exists at exactly one pixel size, so choosing 5x7.bdf or 4x6.bdf at any other size raised inside FreeType and the renderer silently substituted PressStart2P; they now load at their own declared size. cozette.bdf is removed from all six font menus because the core ships no such file, so it could never load (#387). The README gains real rendered screenshots -- a gain, a loss, a crypto entry, both display modes, the inline chart on and off, and four panel sizes -- and documents the eight per-element colour keys that were previously summarised in a sentence.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "2.8.0",
+      "released": "2026-08-19",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Accept the symbols Yahoo actually serves. The field was validated against ^\\^?[A-Z]{1,5}$ -- letters only -- so a commodity (GC=F gold, CL=F crude), a share class (BRK-B), a non-US listing (7203.T) or an index containing a digit (^N225) was rejected at the config form and never reached the API. Nothing else validated symbols and the fetcher passes them through verbatim, so the pattern was the only obstacle: every one of those returns live data from the endpoint this plugin already calls. Indexes with a plain caret (^GSPC, ^DJI, ^VIX) were always accepted and still are. Crypto is no longer hard-coded to USD either -- BTC-EUR previously became BTC-EUR-USD, which has no data; a symbol with no quote currency is still sent as -USD. The README documents each form with worked examples."
+    },
+    {
+      "version": "2.7.0",
+      "released": "2026-08-05",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Pixel-perfect text: all draw surfaces in the display and chart renderers now render with anti-aliasing off, so custom font sizes stay hard-edged on the LED grid. Default sizes were already on the font's pixel grid, so the default look is unchanged."
+    },
+    {
+      "version": "2.6.0",
+      "released": "2026-07-31",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-28",
+      "version": "2.5.0",
+      "notes": "Stock ticker layout overhaul so entries stay compact on large/4x panels and in vegas mode. The mini-chart is now a definite pixel size (chart_width_px / chart_height_px, default 64x32) instead of a fraction of the display, so it no longer balloons on wide chains or tall panels. The chart sits directly to the right of the price (no large gap), and each entry canvas is sized to its actual content so there is no dead space between tickers. Replaces the chart_width_percent / chart_height_percent config keys.",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-16",
+      "version": "2.4.0",
+      "notes": "Add display.chart_width_percent and display.chart_height_percent so the inline mini-chart's size is user configurable instead of hardcoded fractions of the entry canvas.",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-10",
+      "version": "2.3.2",
+      "notes": "Bump logo_x (2px\u21924px) and logo_gap (4px\u21928px) so the ~26px-tall logo isn't cramped against the display edge and the symbol/price text on the 32px-tall display.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-07-08",
+      "version": "2.3.1",
+      "notes": "Set the license to GPL-3.0 (project standard; the LICENSE file was already GPL, the manifest field said MIT). Guard the display_manager.process_deferred_updates() call with hasattr so the plugin renders under display managers that don't implement it (e.g. the plugin-safety harness).",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-05-28",
+      "version": "2.3.0",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-05-15",
+      "version": "2.2.1",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "2.2.0",
+      "released": "2026-03-31",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "2.1.0",
+      "released": "2026-03-04",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "2.0.3",
+      "released": "2026-03-02",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "2.0.2",
+      "released": "2026-02-12",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "2.0.1",
+      "released": "2026-02-11",
+      "ledmatrix_min_version": "2.0.0"
+    }
+  ],
+  "last_updated": "2026-10-02",
+  "stars": 0,
+  "downloads": 0,
+  "verified": true,
+  "screenshot": "",
+  "license": "GPL-3.0"
+}

@@ -1,0 +1,818 @@
+Logging to: /home/ledpi/LEDMatrix/logs/first_time_install_20251003_155630.log
+
+This script will perform the following steps:
+1. Install system dependencies
+2. Fix cache permissions
+3. Fix assets directory permissions
+4. Install main LED Matrix service
+5. Install Python project dependencies (requirements.txt)
+6. Build and install rpi-rgb-led-matrix and test import
+7. Install web interface dependencies
+8. Install web interface service
+9. Configure web interface permissions
+10. Configure passwordless sudo access
+11. Set up proper file ownership
+12. Configure sound module to avoid conflicts
+13. Apply performance optimizations
+14. Test the installation
+
+Do you want to proceed with the installation? (y/N): 
+
+Step 1: Installing system dependencies...
+----------------------------------------
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Hit:1 http://deb.debian.org/debian bookworm InRelease
+Get:2 http://deb.debian.org/debian-security bookworm-security InRelease [48.0 kB]
+Get:3 http://archive.raspberrypi.com/debian bookworm InRelease [54.9 kB]
+Get:4 http://deb.debian.org/debian bookworm-updates InRelease [55.4 kB]
+Get:5 http://deb.debian.org/debian-security bookworm-security/main arm64 Packages [276 kB]
+Get:6 http://deb.debian.org/debian-security bookworm-security/main armhf Packages [262 kB]
+Get:7 http://deb.debian.org/debian-security bookworm-security/main Translation-en [170 kB]
+Get:8 http://archive.raspberrypi.com/debian bookworm/main armhf Packages [560 kB]
+Get:9 http://archive.raspberrypi.com/debian bookworm/main arm64 Packages [559 kB]
+Fetched 1,882 kB in 1s (1,489 kB/s)
+Reading package lists...
+Building dependency tree...
+Reading state information...
+14 packages can be upgraded. Run 'apt list --upgradable' to see them.
+Installing Python packages and dependencies...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+python3-pip is already the newest version (23.0.1+dfsg-1+rpt1).
+python3-venv is already the newest version (3.11.2-1+b1).
+python3-dev is already the newest version (3.11.2-1+b1).
+python3-pil is already the newest version (9.4.0-1.1+deb12u1).
+build-essential is already the newest version (12.9).
+python3-setuptools is already the newest version (66.1.1-1+deb12u2).
+python3-setuptools set to manually installed.
+python3-wheel is already the newest version (0.38.4-2).
+python3-wheel set to manually installed.
+cython3 is already the newest version (0.29.32-2+b1).
+Suggested packages:
+  python-pil-doc
+The following NEW packages will be installed:
+  python3-pil.imagetk
+0 upgraded, 1 newly installed, 0 to remove and 14 not upgraded.
+Need to get 74.3 kB of archives.
+After this operation, 158 kB of additional disk space will be used.
+Get:1 http://deb.debian.org/debian bookworm/main arm64 python3-pil.imagetk arm64 9.4.0-1.1+deb12u1 [74.3 kB]
+Fetched 74.3 kB in 0s (844 kB/s)
+Selecting previously unselected package python3-pil.imagetk:arm64.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 130810 files and directories currently installed.)
+Preparing to unpack .../python3-pil.imagetk_9.4.0-1.1+deb12u1_arm64.deb ...
+Unpacking python3-pil.imagetk:arm64 (9.4.0-1.1+deb12u1) ...
+Setting up python3-pil.imagetk:arm64 (9.4.0-1.1+deb12u1) ...
+Installing additional system dependencies...
+
+WARNING: apt does not have a stable CLI interface. Use with caution in scripts.
+
+Reading package lists...
+Building dependency tree...
+Reading state information...
+git is already the newest version (1:2.39.5-0+deb12u2).
+curl is already the newest version (7.88.1-10+deb12u14).
+wget is already the newest version (1.21.3-1+deb12u1).
+wget set to manually installed.
+unzip is already the newest version (6.0-28).
+0 upgraded, 0 newly installed, 0 to remove and 14 not upgraded.
+✓ System dependencies installed
+
+Step 2: Fixing cache permissions...
+----------------------------------
+Running cache permissions fix...
+Fixing LEDMatrix cache directory permissions...
+
+Checking cache directory: /var/cache/ledmatrix
+  - Directory does not exist. Creating it...
+  - Current permissions:
+drwxr-xr-x 2 root root 4096 Oct  3 15:56 /var/cache/ledmatrix
+  - Fixing permissions...
+  - Updated permissions:
+drwxrwxrwx 2 ledpi ledpi 4096 Oct  3 15:56 /var/cache/ledmatrix
+  - Testing write access as ledpi...
+    ✓ /var/cache/ledmatrix is now writable by ledpi
+  - Permissions fix complete for /var/cache/ledmatrix.
+
+Checking cache directory: /home/ledpi/.ledmatrix_cache
+  - Directory does not exist. Creating it...
+  - Current permissions:
+drwxr-xr-x 2 root root 4096 Oct  3 15:56 /home/ledpi/.ledmatrix_cache
+  - Fixing permissions...
+  - Updated permissions:
+drwxrwxrwx 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/.ledmatrix_cache
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/.ledmatrix_cache is now writable by ledpi
+  - Permissions fix complete for /home/ledpi/.ledmatrix_cache.
+
+Setting up placeholder logos directory for sports managers...
+Creating placeholder logos directory: /var/cache/ledmatrix/placeholder_logos
+  - Current permissions:
+drwxrwxrwx 2 ledpi ledpi 4096 Oct  3 15:56 /var/cache/ledmatrix/placeholder_logos
+  - Testing write access as ledpi...
+    ✓ Placeholder logos directory is writable by ledpi
+    ✓ Placeholder logos directory is writable by daemon user
+
+All cache directory permission fixes attempted.
+If you still see errors, check which user is running the LEDMatrix service and ensure it matches the owner above.
+
+The system will now create placeholder logos in:
+  /var/cache/ledmatrix/placeholder_logos
+This should eliminate the permission denied warnings for sports logos.
+✓ Cache permissions fixed
+
+Step 3: Fixing assets directory permissions...
+--------------------------------------------
+Running assets permissions fix...
+Fixing LEDMatrix assets directory permissions...
+Project directory: /home/ledpi/LEDMatrix
+Assets directory: /home/ledpi/LEDMatrix/assets
+Real user: ledpi
+Real group: ledpi
+
+Fixing permissions for assets directory and subdirectories...
+Setting ownership of assets directory...
+✓ Set assets directory ownership to ledpi:ledpi
+Setting permissions for assets directory...
+✓ Set assets directory permissions to 775
+
+Ensuring sports logo directories are writable...
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/ncaa_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/ncaa_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/ncaa_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/ncaa_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/nfl_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nfl_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nfl_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/nfl_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/nba_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nba_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nba_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/nba_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/nhl_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nhl_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/nhl_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/nhl_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/mlb_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/mlb_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/mlb_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/mlb_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/milb_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/milb_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/milb_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/milb_logos is writable by ledpi
+
+Checking directory: /home/ledpi/LEDMatrix/assets/sports/soccer_logos
+  - Directory exists
+  - Current permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/soccer_logos
+  - Updated permissions:
+drwxrwxr-x 2 ledpi ledpi 4096 Oct  3 15:56 /home/ledpi/LEDMatrix/assets/sports/soccer_logos
+  - Testing write access as ledpi...
+    ✓ /home/ledpi/LEDMatrix/assets/sports/soccer_logos is writable by ledpi
+
+Testing write access to ncaa_logos directory specifically...
+✓ Successfully created test file in ncaa_logos directory
+✓ Successfully removed test file
+
+Assets permissions fix completed!
+
+The application should now be able to download and save team logos.
+If you still see permission errors, check which user is running the LEDMatrix service
+and ensure it matches the owner above (ledpi).
+
+You may need to restart the LEDMatrix service for the changes to take effect:
+  sudo systemctl restart ledmatrix.service
+✓ Assets permissions fixed
+
+Step 4: Installing main LED Matrix service...
+---------------------------------------------
+Running main service installation...
+Installing LED Matrix Display Service for user: ledpi
+Using home directory: /home/ledpi
+Project root directory: /home/ledpi/LEDMatrix
+Enabling ledmatrix.service (main display) to start on boot...
+Created symlink /etc/systemd/system/multi-user.target.wants/ledmatrix.service → /etc/systemd/system/ledmatrix.service.
+Starting ledmatrix.service (main display)...
+Installing LEDMatrix Web Interface service (ledmatrix-web.service)...
+Reloading systemd daemon for web service...
+Enabling ledmatrix-web.service to start on boot...
+Created symlink /etc/systemd/system/multi-user.target.wants/ledmatrix-web.service → /etc/systemd/system/ledmatrix-web.service.
+Starting ledmatrix-web.service...
+LEDMatrix Web Interface service (ledmatrix-web.service) installation complete.
+It will start based on the 'web_display_autostart' setting in config/config.json.
+Service status for main display (ledmatrix.service):
+● ledmatrix.service - LED Matrix Display Service
+     Loaded: loaded (/etc/systemd/system/ledmatrix.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-10-03 15:56:47 BST; 1s ago
+   Main PID: 2974 (python3)
+      Tasks: 1 (limit: 3914)
+        CPU: 150ms
+     CGroup: /system.slice/ledmatrix.service
+             └─2974 /usr/bin/python3 /home/ledpi/LEDMatrix/display_controller.py
+
+Oct 03 15:56:47 ledpi systemd[1]: Started ledmatrix.service - LED Matrix Display Service.
+Oct 03 15:56:47 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:12: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 15:56:47 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:13: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 15:56:48 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:12: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Oct 03 15:56:48 ledpi systemd[1]: /etc/systemd/system/ledmatrix.service:13: Standard output type syslog is obsolete, automatically updating to journal. Please update your unit file, and consider removing the setting altogether.
+Service status for web interface (ledmatrix-web.service):
+● ledmatrix-web.service - LED Matrix Web Interface (Conditional Start)
+     Loaded: loaded (/etc/systemd/system/ledmatrix-web.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-10-03 15:56:48 BST; 425ms ago
+   Main PID: 3025 (python3)
+      Tasks: 1 (limit: 3914)
+        CPU: 49ms
+     CGroup: /system.slice/ledmatrix-web.service
+             └─3025 /usr/bin/python3 /home/ledpi/LEDMatrix/start_web_conditionally.py
+
+Oct 03 15:56:48 ledpi systemd[1]: Started ledmatrix-web.service - LED Matrix Web Interface (Conditional Start).
+
+LED Matrix Services have been processed.
+
+To stop the main display when you SSH in:
+  sudo systemctl stop ledmatrix.service
+To stop the web interface:
+  sudo systemctl stop ledmatrix-web.service
+
+To check if the main display service is running:
+  sudo systemctl status ledmatrix.service
+To check if the web interface service is running:
+  sudo systemctl status ledmatrix-web.service
+
+To restart the main display service:
+  sudo systemctl restart ledmatrix.service
+To restart the web interface service:
+  sudo systemctl restart ledmatrix-web.service
+
+To view logs for the main display:
+  journalctl -u ledmatrix.service
+To view logs for the web interface:
+  journalctl -u ledmatrix-web.service
+
+To disable autostart for the main display:
+  sudo systemctl disable ledmatrix.service
+To disable autostart for the web interface:
+  sudo systemctl disable ledmatrix-web.service
+✓ Main LED Matrix service installed
+
+Step 4.1: Ensuring configuration files exist...
+------------------------------------------------
+Creating config/config.json from template...
+✓ Main config file created from template
+Creating config/config_secrets.json from template...
+✓ Secrets file created from template
+
+Step 5: Installing Python project dependencies...
+-----------------------------------------------
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Collecting Pillow>=10.3.0
+  Downloading pillow-11.3.0-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl (6.0 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.0/6.0 MB 6.6 MB/s eta 0:00:00
+Collecting pytz==2023.3
+  Downloading https://www.piwheels.org/simple/pytz/pytz-2023.3-py3-none-any.whl (502 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 502.4/502.4 kB 4.8 MB/s eta 0:00:00
+Collecting requests>=2.32.0
+  Downloading https://www.piwheels.org/simple/requests/requests-2.32.5-py3-none-any.whl (64 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.7/64.7 kB 2.4 MB/s eta 0:00:00
+Collecting timezonefinder==6.2.0
+  Downloading timezonefinder-6.2.0.tar.gz (46.9 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 46.9/46.9 MB 1.9 MB/s eta 0:00:00
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting geopy==2.4.1
+  Downloading https://www.piwheels.org/simple/geopy/geopy-2.4.1-py3-none-any.whl (114 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 114.3/114.3 kB 1.5 MB/s eta 0:00:00
+Collecting google-auth-oauthlib==1.0.0
+  Downloading https://www.piwheels.org/simple/google-auth-oauthlib/google_auth_oauthlib-1.0.0-py2.py3-none-any.whl (18 kB)
+Collecting google-auth-httplib2==0.1.0
+  Downloading https://www.piwheels.org/simple/google-auth-httplib2/google_auth_httplib2-0.1.0-py2.py3-none-any.whl (9.3 kB)
+Collecting google-api-python-client==2.86.0
+  Downloading https://www.piwheels.org/simple/google-api-python-client/google_api_python_client-2.86.0-py2.py3-none-any.whl (11.3 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 11.3/11.3 MB 6.0 MB/s eta 0:00:00
+Collecting freetype-py==2.5.1
+  Downloading freetype_py-2.5.1-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.1 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 3.8 MB/s eta 0:00:00
+Collecting spotipy
+  Downloading https://www.piwheels.org/simple/spotipy/spotipy-2.25.1-py3-none-any.whl (31 kB)
+Requirement already satisfied: Flask in /usr/lib/python3/dist-packages (from -r /home/ledpi/LEDMatrix/requirements.txt (line 11)) (2.2.2)
+Collecting unidecode
+  Downloading https://www.piwheels.org/simple/unidecode/unidecode-1.4.0-py3-none-any.whl (235 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 235.9/235.9 kB 2.7 MB/s eta 0:00:00
+Collecting icalevents
+  Downloading https://www.piwheels.org/simple/icalevents/icalevents-0.3.1-py3-none-any.whl (10 kB)
+Collecting python-socketio
+  Downloading https://www.piwheels.org/simple/python-socketio/python_socketio-5.14.1-py3-none-any.whl (78 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 78.5/78.5 kB 61.7 kB/s eta 0:00:00
+Collecting python-engineio
+  Downloading https://www.piwheels.org/simple/python-engineio/python_engineio-4.12.3-py3-none-any.whl (59 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 59.6/59.6 kB 1.6 MB/s eta 0:00:00
+Collecting websockets
+  Downloading websockets-15.0.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (182 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 182.9/182.9 kB 3.1 MB/s eta 0:00:00
+Collecting websocket-client
+  Downloading https://www.piwheels.org/simple/websocket-client/websocket_client-1.8.0-py3-none-any.whl (58 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 58.8/58.8 kB 1.1 MB/s eta 0:00:00
+Collecting cffi<2,>=1.15.1
+  Downloading cffi-1.17.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (469 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 469.2/469.2 kB 639.2 kB/s eta 0:00:00
+Collecting h3<4,>=3.7.6
+  Downloading h3-3.7.7-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl (1.2 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 1.1 MB/s eta 0:00:00
+Requirement already satisfied: numpy<2,>=1.18 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (1.24.2)
+Requirement already satisfied: setuptools>=65.5 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 4)) (66.1.1)
+Collecting geographiclib<3,>=1.52
+  Downloading https://www.piwheels.org/simple/geographiclib/geographiclib-2.1-py3-none-any.whl (40 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.8/40.8 kB 1.4 MB/s eta 0:00:00
+Collecting google-auth>=2.15.0
+  Downloading https://www.piwheels.org/simple/google-auth/google_auth-2.41.1-py2.py3-none-any.whl (221 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 221.3/221.3 kB 2.2 MB/s eta 0:00:00
+Requirement already satisfied: requests-oauthlib>=0.7.0 in /usr/lib/python3/dist-packages (from google-auth-oauthlib==1.0.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 6)) (1.3.0)
+Collecting httplib2>=0.15.0
+  Downloading https://www.piwheels.org/simple/httplib2/httplib2-0.31.0-py3-none-any.whl (91 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 91.1/91.1 kB 2.9 MB/s eta 0:00:00
+Requirement already satisfied: six in /usr/lib/python3/dist-packages (from google-auth-httplib2==0.1.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 7)) (1.16.0)
+Collecting google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5
+  Downloading https://www.piwheels.org/simple/google-api-core/google_api_core-2.25.2-py3-none-any.whl (162 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 162.5/162.5 kB 2.8 MB/s eta 0:00:00
+Requirement already satisfied: uritemplate<5,>=3.0.1 in /usr/lib/python3/dist-packages (from google-api-python-client==2.86.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 8)) (4.1.1)
+Requirement already satisfied: charset_normalizer<4,>=2 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (3.0.1)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (3.3)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (1.26.12)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests>=2.32.0->-r /home/ledpi/LEDMatrix/requirements.txt (line 3)) (2022.9.24)
+Collecting redis>=3.5.3
+  Downloading https://www.piwheels.org/simple/redis/redis-6.4.0-py3-none-any.whl (279 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 279.8/279.8 kB 4.8 MB/s eta 0:00:00
+Collecting icalendar>=5.0.0
+  Downloading https://www.piwheels.org/simple/icalendar/icalendar-6.3.1-py3-none-any.whl (242 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 242.4/242.4 kB 207.4 kB/s eta 0:00:00
+Collecting python-dateutil<3.0,>=2.9
+  Downloading https://www.piwheels.org/simple/python-dateutil/python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 229.9/229.9 kB 3.0 MB/s eta 0:00:00
+Collecting icalevents
+  Downloading https://archive1.piwheels.org/simple/icalevents/icalevents-0.3.0-py3-none-any.whl (10 kB)
+  Downloading https://www.piwheels.org/simple/icalevents/icalevents-0.2.1-py3-none-any.whl (10 kB)
+  Downloading https://archive1.piwheels.org/simple/icalevents/icalevents-0.2.0-py3-none-any.whl (10 kB)
+  Downloading https://archive1.piwheels.org/simple/icalevents/icalevents-0.1.29-py3-none-any.whl (10 kB)
+Collecting httplib2>=0.15.0
+  Downloading https://www.piwheels.org/simple/httplib2/httplib2-0.22.0-py3-none-any.whl (96 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 96.9/96.9 kB 2.1 MB/s eta 0:00:00
+Collecting icalendar==5.0.13
+  Downloading https://www.piwheels.org/simple/icalendar/icalendar-5.0.13-py3-none-any.whl (118 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 118.5/118.5 kB 477.2 kB/s eta 0:00:00
+Collecting icalevents
+  Downloading https://archive1.piwheels.org/simple/icalevents/icalevents-0.1.28-py3-none-any.whl (9.9 kB)
+  Downloading https://www.piwheels.org/simple/icalevents/icalevents-0.1.27-py3-none-any.whl (9.8 kB)
+Collecting DateTime<5.0,>=4.3
+  Downloading https://www.piwheels.org/simple/datetime/DateTime-4.9-py2.py3-none-any.whl (52 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 52.4/52.4 kB 3.6 MB/s eta 0:00:00
+Collecting httplib2>=0.15.0
+  Downloading https://www.piwheels.org/simple/httplib2/httplib2-0.20.4-py3-none-any.whl (96 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 96.6/96.6 kB 4.5 MB/s eta 0:00:00
+Collecting icalendar==4.0.9
+  Downloading https://www.piwheels.org/simple/icalendar/icalendar-4.0.9-py2.py3-none-any.whl (84 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.3/84.3 kB 4.1 MB/s eta 0:00:00
+Collecting icalevents
+  Downloading https://archive1.piwheels.org/simple/icalevents/icalevents-0.1.26-py3-none-any.whl (9.6 kB)
+Collecting DateTime==4.3
+  Downloading https://www.piwheels.org/simple/datetime/DateTime-4.3-py2.py3-none-any.whl (60 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.1/60.1 kB 2.8 MB/s eta 0:00:00
+Collecting httplib2>=0.15.0
+  Downloading https://www.piwheels.org/simple/httplib2/httplib2-0.20.1-py3-none-any.whl (96 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 96.6/96.6 kB 4.7 MB/s eta 0:00:00
+Collecting icalendar==4.0.8
+  Downloading https://archive1.piwheels.org/simple/icalendar/icalendar-4.0.8-py2.py3-none-any.whl (83 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.0/84.0 kB 2.0 MB/s eta 0:00:00
+Collecting python-dateutil==2.8.2
+  Downloading https://www.piwheels.org/simple/python-dateutil/python_dateutil-2.8.2-py2.py3-none-any.whl (247 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 247.7/247.7 kB 6.4 MB/s eta 0:00:00
+Collecting icalevents
+  Downloading https://www.piwheels.org/simple/icalevents/icalevents-0.1.25-py3-none-any.whl (8.3 kB)
+Collecting datetime
+  Downloading https://www.piwheels.org/simple/datetime/DateTime-5.5-py3-none-any.whl (52 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 52.6/52.6 kB 3.3 MB/s eta 0:00:00
+Collecting bidict>=0.21.0
+  Downloading https://www.piwheels.org/simple/bidict/bidict-0.23.1-py3-none-any.whl (32 kB)
+Collecting simple-websocket>=0.10.0
+  Downloading https://www.piwheels.org/simple/simple-websocket/simple_websocket-1.1.0-py3-none-any.whl (13 kB)
+Collecting pycparser
+  Using cached https://www.piwheels.org/simple/pycparser/pycparser-2.23-py3-none-any.whl (118 kB)
+Collecting googleapis-common-protos<2.0.0,>=1.56.2
+  Downloading https://archive1.piwheels.org/simple/googleapis-common-protos/googleapis_common_protos-1.70.0-py3-none-any.whl (294 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 294.6/294.6 kB 4.0 MB/s eta 0:00:00
+Collecting protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.0,>=3.19.5
+  Downloading protobuf-6.32.1-cp39-abi3-manylinux2014_aarch64.whl (322 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 322.9/322.9 kB 5.4 MB/s eta 0:00:00
+Collecting proto-plus<2.0.0,>=1.22.3
+  Downloading https://www.piwheels.org/simple/proto-plus/proto_plus-1.26.1-py3-none-any.whl (50 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 50.2/50.2 kB 1.4 MB/s eta 0:00:00
+Collecting cachetools<7.0,>=2.0.0
+  Downloading https://www.piwheels.org/simple/cachetools/cachetools-6.2.0-py3-none-any.whl (11 kB)
+Collecting pyasn1-modules>=0.2.1
+  Downloading https://www.piwheels.org/simple/pyasn1-modules/pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 181.3/181.3 kB 2.8 MB/s eta 0:00:00
+Collecting rsa<5,>=3.1.4
+  Downloading https://www.piwheels.org/simple/rsa/rsa-4.9.1-py3-none-any.whl (34 kB)
+Collecting pyparsing<4,>=3.0.4
+  Downloading https://www.piwheels.org/simple/pyparsing/pyparsing-3.2.5-py3-none-any.whl (113 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.9/113.9 kB 870.1 kB/s eta 0:00:00
+Collecting async-timeout>=4.0.3
+  Downloading https://www.piwheels.org/simple/async-timeout/async_timeout-5.0.1-py3-none-any.whl (6.2 kB)
+Collecting wsproto
+  Downloading https://www.piwheels.org/simple/wsproto/wsproto-1.2.0-py3-none-any.whl (24 kB)
+Collecting zope.interface
+  Downloading zope_interface-8.0.1-cp311-cp311-manylinux2014_aarch64.manylinux_2_17_aarch64.whl (260 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 261.0/261.0 kB 192.4 kB/s eta 0:00:00
+Collecting tzdata
+  Downloading https://www.piwheels.org/simple/tzdata/tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 347.8/347.8 kB 3.2 MB/s eta 0:00:00
+Collecting pyasn1<0.7.0,>=0.6.1
+  Downloading https://www.piwheels.org/simple/pyasn1/pyasn1-0.6.1-py3-none-any.whl (83 kB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 83.5/83.5 kB 1.6 MB/s eta 0:00:00
+Collecting h11<1,>=0.9.0
+  Downloading https://www.piwheels.org/simple/h11/h11-0.16.0-py3-none-any.whl (37 kB)
+Building wheels for collected packages: timezonefinder
+  Building wheel for timezonefinder (pyproject.toml): started
+  Building wheel for timezonefinder (pyproject.toml): finished with status 'done'
+  Created wheel for timezonefinder: filename=timezonefinder-6.2.0-cp311-cp311-manylinux_2_36_aarch64.whl size=46901226 sha256=375df5aca81d5e73adb980a6c1efd088f9b4e9a44795513ce525272a9766430c
+  Stored in directory: /root/.cache/pip/wheels/4f/71/98/f404a7dd37188ed87e577b58034a5f1c0094f056f56d51610b
+Successfully built timezonefinder
+Installing collected packages: pytz, h3, zope.interface, websockets, websocket-client, unidecode, tzdata, requests, python-dateutil, pyparsing, pycparser, pyasn1, protobuf, Pillow, h11, geographiclib, freetype-py, cachetools, bidict, async-timeout, wsproto, rsa, redis, pyasn1-modules, proto-plus, icalendar, httplib2, googleapis-common-protos, geopy, datetime, cffi, timezonefinder, spotipy, simple-websocket, icalevents, google-auth, python-engineio, google-auth-oauthlib, google-auth-httplib2, google-api-core, python-socketio, google-api-python-client
+  Attempting uninstall: pytz
+    Found existing installation: pytz 2022.7.1
+    Not uninstalling pytz at /usr/lib/python3/dist-packages, outside environment /usr
+    Can't uninstall 'pytz'. No files were found to uninstall.
+  Attempting uninstall: requests
+    Found existing installation: requests 2.28.1
+    Not uninstalling requests at /usr/lib/python3/dist-packages, outside environment /usr
+    Can't uninstall 'requests'. No files were found to uninstall.
+  Attempting uninstall: Pillow
+    Found existing installation: Pillow 9.4.0
+    Not uninstalling pillow at /usr/lib/python3/dist-packages, outside environment /usr
+    Can't uninstall 'Pillow'. No files were found to uninstall.
+Successfully installed Pillow-11.3.0 async-timeout-5.0.1 bidict-0.23.1 cachetools-6.2.0 cffi-1.17.1 datetime-5.5 freetype-py-2.5.1 geographiclib-2.1 geopy-2.4.1 google-api-core-2.25.2 google-api-python-client-2.86.0 google-auth-2.41.1 google-auth-httplib2-0.1.0 google-auth-oauthlib-1.0.0 googleapis-common-protos-1.70.0 h11-0.16.0 h3-3.7.7 httplib2-0.31.0 icalendar-6.3.1 icalevents-0.1.25 proto-plus-1.26.1 protobuf-6.32.1 pyasn1-0.6.1 pyasn1-modules-0.4.2 pycparser-2.23 pyparsing-3.2.5 python-dateutil-2.9.0.post0 python-engineio-4.12.3 python-socketio-5.14.1 pytz-2023.3 redis-6.4.0 requests-2.32.5 rsa-4.9.1 simple-websocket-1.1.0 spotipy-2.25.1 timezonefinder-6.2.0 tzdata-2025.2 unidecode-1.4.0 websocket-client-1.8.0 websockets-15.0.1 wsproto-1.2.0 zope.interface-8.0.1
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+✓ Project Python dependencies installed
+
+Step 6: Building and installing rpi-rgb-led-matrix...
+-----------------------------------------------------
+Building rpi-rgb-led-matrix Python bindings...
+make -C ./lib
+make[1]: Entering directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/lib'
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o gpio.o gpio.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o led-matrix.o led-matrix.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o options-initialize.o options-initialize.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o framebuffer.o framebuffer.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o thread.o thread.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o bdf-font.o bdf-font.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o graphics.o graphics.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o led-matrix-c.o led-matrix-c.cc
+cc  -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -c -o hardware-mapping.o hardware-mapping.c
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o pixel-mapper.o pixel-mapper.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o multiplex-mappers.o multiplex-mappers.cc
+g++ -I../include -W -Wall -Wextra -Wno-unused-parameter -O3 -g -fPIC  -DDEFAULT_HARDWARE='"regular"' -march=native -fno-exceptions -std=c++11 -c -o content-streamer.o content-streamer.cc
+ar rcs librgbmatrix.a gpio.o led-matrix.o options-initialize.o framebuffer.o thread.o bdf-font.o graphics.o led-matrix-c.o hardware-mapping.o pixel-mapper.o multiplex-mappers.o content-streamer.o
+g++ -shared -Wl,-soname,librgbmatrix.so.1 -o librgbmatrix.so.1 gpio.o led-matrix.o options-initialize.o framebuffer.o thread.o bdf-font.o graphics.o led-matrix-c.o hardware-mapping.o pixel-mapper.o multiplex-mappers.o content-streamer.o -lpthread  -lrt -lm -lpthread
+make[1]: Leaving directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/lib'
+make -C examples-api-use
+make[1]: Entering directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/examples-api-use'
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o demo-main.o demo-main.cc
+make -C ../lib
+make[2]: Entering directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/lib'
+make[2]: Leaving directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/lib'
+g++ demo-main.o -o demo -L../lib -lrgbmatrix -lrt -lm -lpthread
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o minimal-example.o minimal-example.cc
+g++ minimal-example.o -o minimal-example -L../lib -lrgbmatrix -lrt -lm -lpthread
+cc -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o c-example.o c-example.c
+cc c-example.o -o c-example -L../lib -lrgbmatrix -lrt -lm -lpthread -lstdc++
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o text-example.o text-example.cc
+g++ text-example.o -o text-example -L../lib -lrgbmatrix -lrt -lm -lpthread
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o scrolling-text-example.o scrolling-text-example.cc
+g++ scrolling-text-example.o -o scrolling-text-example -L../lib -lrgbmatrix -lrt -lm -lpthread
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o clock.o clock.cc
+g++ clock.o -o clock -L../lib -lrgbmatrix -lrt -lm -lpthread
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o ledcat.o ledcat.cc
+g++ ledcat.o -o ledcat -L../lib -lrgbmatrix -lrt -lm -lpthread
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o input-example.o input-example.cc
+g++ input-example.o -o input-example -L../lib -lrgbmatrix -lrt -lm -lpthread
+g++ -I../include -Wall -O3 -g -Wextra -Wno-unused-parameter -c -o pixel-mover.o pixel-mover.cc
+g++ pixel-mover.o -o pixel-mover -L../lib -lrgbmatrix -lrt -lm -lpthread
+make[1]: Leaving directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/examples-api-use'
+make -C bindings/python build
+make[1]: Entering directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/bindings/python'
+make -C ../../lib
+make[2]: Entering directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/lib'
+make[2]: Leaving directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/lib'
+make -C rgbmatrix
+make[2]: Entering directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/bindings/python/rgbmatrix'
+cython3 --cplus -o core.cpp core.pyx
+warning: core.pyx:92:39: Not all members given for struct 'Options'
+warning: core.pyx:92:39: Not all members given for struct 'Options'
+warning: core.pyx:93:54: Not all members given for struct 'RuntimeOptions'
+warning: core.pyx:93:54: Not all members given for struct 'RuntimeOptions'
+cython3 --cplus -o graphics.cpp graphics.pyx
+make[2]: Leaving directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/bindings/python/rgbmatrix'
+/usr/bin/python3 setup.py build --build-lib .
+make[1]: Leaving directory '/home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/bindings/python'
+Installing rpi-rgb-led-matrix Python package via pip...
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Processing /home/ledpi/LEDMatrix/rpi-rgb-led-matrix-master/bindings/python
+  Preparing metadata (setup.py): started
+  Preparing metadata (setup.py): finished with status 'done'
+Building wheels for collected packages: rgbmatrix
+  Building wheel for rgbmatrix (setup.py): started
+  Building wheel for rgbmatrix (setup.py): finished with status 'done'
+  Created wheel for rgbmatrix: filename=rgbmatrix-0.0.1-cp311-cp311-linux_aarch64.whl size=852274 sha256=c1c5c69280e3e41f0c6915dcce2e885d78acb38160e44eec6cf94c0816b1774b
+  Stored in directory: /tmp/pip-ephem-wheel-cache-m6hfy_1v/wheels/6d/f2/cf/209f2e202efdb4b5bd4ae64ac3584be1bdb27ec3fca1e4ccda
+Successfully built rgbmatrix
+Installing collected packages: rgbmatrix
+Successfully installed rgbmatrix-0.0.1
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Running rgbmatrix import test...
+Success! rgbmatrix version: 0.0.1
+✓ rpi-rgb-led-matrix installed and verified
+
+Step 7: Installing web interface dependencies...
+------------------------------------------------
+Installing Python dependencies for web interface...
+Using smart dependency installer...
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: websocket-client in /usr/local/lib/python3.11/dist-packages (1.8.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: timezonefinder==6.2.0 in /usr/local/lib/python3.11/dist-packages (6.2.0)
+Requirement already satisfied: cffi<2,>=1.15.1 in /usr/local/lib/python3.11/dist-packages (from timezonefinder==6.2.0) (1.17.1)
+Requirement already satisfied: h3<4,>=3.7.6 in /usr/local/lib/python3.11/dist-packages (from timezonefinder==6.2.0) (3.7.7)
+Requirement already satisfied: numpy<2,>=1.18 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0) (1.24.2)
+Requirement already satisfied: setuptools>=65.5 in /usr/lib/python3/dist-packages (from timezonefinder==6.2.0) (66.1.1)
+Requirement already satisfied: pycparser in /usr/local/lib/python3.11/dist-packages (from cffi<2,>=1.15.1->timezonefinder==6.2.0) (2.23)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: google-auth-oauthlib==1.0.0 in /usr/local/lib/python3.11/dist-packages (1.0.0)
+Requirement already satisfied: google-auth>=2.15.0 in /usr/local/lib/python3.11/dist-packages (from google-auth-oauthlib==1.0.0) (2.41.1)
+Requirement already satisfied: requests-oauthlib>=0.7.0 in /usr/lib/python3/dist-packages (from google-auth-oauthlib==1.0.0) (1.3.0)
+Requirement already satisfied: cachetools<7.0,>=2.0.0 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (6.2.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (0.4.2)
+Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/dist-packages (from google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (4.9.1)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /usr/local/lib/python3.11/dist-packages (from pyasn1-modules>=0.2.1->google-auth>=2.15.0->google-auth-oauthlib==1.0.0) (0.6.1)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: google-auth-httplib2==0.1.0 in /usr/local/lib/python3.11/dist-packages (0.1.0)
+Requirement already satisfied: google-auth in /usr/local/lib/python3.11/dist-packages (from google-auth-httplib2==0.1.0) (2.41.1)
+Requirement already satisfied: httplib2>=0.15.0 in /usr/local/lib/python3.11/dist-packages (from google-auth-httplib2==0.1.0) (0.31.0)
+Requirement already satisfied: six in /usr/lib/python3/dist-packages (from google-auth-httplib2==0.1.0) (1.16.0)
+Requirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/dist-packages (from httplib2>=0.15.0->google-auth-httplib2==0.1.0) (3.2.5)
+Requirement already satisfied: cachetools<7.0,>=2.0.0 in /usr/local/lib/python3.11/dist-packages (from google-auth->google-auth-httplib2==0.1.0) (6.2.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /usr/local/lib/python3.11/dist-packages (from google-auth->google-auth-httplib2==0.1.0) (0.4.2)
+Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/dist-packages (from google-auth->google-auth-httplib2==0.1.0) (4.9.1)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /usr/local/lib/python3.11/dist-packages (from pyasn1-modules>=0.2.1->google-auth->google-auth-httplib2==0.1.0) (0.6.1)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: google-api-python-client==2.86.0 in /usr/local/lib/python3.11/dist-packages (2.86.0)
+Requirement already satisfied: httplib2<1dev,>=0.15.0 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (0.31.0)
+Requirement already satisfied: google-auth<3.0.0dev,>=1.19.0 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (2.41.1)
+Requirement already satisfied: google-auth-httplib2>=0.1.0 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (0.1.0)
+Requirement already satisfied: google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5 in /usr/local/lib/python3.11/dist-packages (from google-api-python-client==2.86.0) (2.25.2)
+Requirement already satisfied: uritemplate<5,>=3.0.1 in /usr/lib/python3/dist-packages (from google-api-python-client==2.86.0) (4.1.1)
+Requirement already satisfied: googleapis-common-protos<2.0.0,>=1.56.2 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (1.70.0)
+Requirement already satisfied: protobuf!=3.20.0,!=3.20.1,!=4.21.0,!=4.21.1,!=4.21.2,!=4.21.3,!=4.21.4,!=4.21.5,<7.0.0,>=3.19.5 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (6.32.1)
+Requirement already satisfied: proto-plus<2.0.0,>=1.22.3 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (1.26.1)
+Requirement already satisfied: requests<3.0.0,>=2.18.0 in /usr/local/lib/python3.11/dist-packages (from google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (2.32.5)
+Requirement already satisfied: cachetools<7.0,>=2.0.0 in /usr/local/lib/python3.11/dist-packages (from google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (6.2.0)
+Requirement already satisfied: pyasn1-modules>=0.2.1 in /usr/local/lib/python3.11/dist-packages (from google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (0.4.2)
+Requirement already satisfied: rsa<5,>=3.1.4 in /usr/local/lib/python3.11/dist-packages (from google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (4.9.1)
+Requirement already satisfied: six in /usr/lib/python3/dist-packages (from google-auth-httplib2>=0.1.0->google-api-python-client==2.86.0) (1.16.0)
+Requirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/dist-packages (from httplib2<1dev,>=0.15.0->google-api-python-client==2.86.0) (3.2.5)
+Requirement already satisfied: pyasn1<0.7.0,>=0.6.1 in /usr/local/lib/python3.11/dist-packages (from pyasn1-modules>=0.2.1->google-auth<3.0.0dev,>=1.19.0->google-api-python-client==2.86.0) (0.6.1)
+Requirement already satisfied: charset_normalizer<4,>=2 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (3.0.1)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (3.3)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (1.26.12)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests<3.0.0,>=2.18.0->google-api-core!=2.0.*,!=2.1.*,!=2.2.*,!=2.3.0,<3.0.0dev,>=1.31.5->google-api-python-client==2.86.0) (2022.9.24)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: spotipy in /usr/local/lib/python3.11/dist-packages (2.25.1)
+Requirement already satisfied: redis>=3.5.3 in /usr/local/lib/python3.11/dist-packages (from spotipy) (6.4.0)
+Requirement already satisfied: requests>=2.25.0 in /usr/local/lib/python3.11/dist-packages (from spotipy) (2.32.5)
+Requirement already satisfied: urllib3>=1.26.0 in /usr/lib/python3/dist-packages (from spotipy) (1.26.12)
+Requirement already satisfied: async-timeout>=4.0.3 in /usr/local/lib/python3.11/dist-packages (from redis>=3.5.3->spotipy) (5.0.1)
+Requirement already satisfied: charset_normalizer<4,>=2 in /usr/lib/python3/dist-packages (from requests>=2.25.0->spotipy) (3.0.1)
+Requirement already satisfied: idna<4,>=2.5 in /usr/lib/python3/dist-packages (from requests>=2.25.0->spotipy) (3.3)
+Requirement already satisfied: certifi>=2017.4.17 in /usr/lib/python3/dist-packages (from requests>=2.25.0->spotipy) (2022.9.24)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: icalevents in /usr/local/lib/python3.11/dist-packages (0.1.25)
+Requirement already satisfied: httplib2 in /usr/local/lib/python3.11/dist-packages (from icalevents) (0.31.0)
+Requirement already satisfied: icalendar in /usr/local/lib/python3.11/dist-packages (from icalevents) (6.3.1)
+Requirement already satisfied: pytz in /usr/local/lib/python3.11/dist-packages (from icalevents) (2023.3)
+Requirement already satisfied: datetime in /usr/local/lib/python3.11/dist-packages (from icalevents) (5.5)
+Requirement already satisfied: zope.interface in /usr/local/lib/python3.11/dist-packages (from datetime->icalevents) (8.0.1)
+Requirement already satisfied: pyparsing<4,>=3.0.4 in /usr/local/lib/python3.11/dist-packages (from httplib2->icalevents) (3.2.5)
+Requirement already satisfied: python-dateutil in /usr/local/lib/python3.11/dist-packages (from icalendar->icalevents) (2.9.0.post0)
+Requirement already satisfied: tzdata in /usr/local/lib/python3.11/dist-packages (from icalendar->icalevents) (2025.2)
+Requirement already satisfied: six>=1.5 in /usr/lib/python3/dist-packages (from python-dateutil->icalendar->icalevents) (1.16.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Looking in indexes: https://pypi.org/simple, https://www.piwheels.org/simple
+Requirement already satisfied: python-engineio in /usr/local/lib/python3.11/dist-packages (4.12.3)
+Requirement already satisfied: simple-websocket>=0.10.0 in /usr/local/lib/python3.11/dist-packages (from python-engineio) (1.1.0)
+Requirement already satisfied: wsproto in /usr/local/lib/python3.11/dist-packages (from simple-websocket>=0.10.0->python-engineio) (1.2.0)
+Requirement already satisfied: h11<1,>=0.9.0 in /usr/local/lib/python3.11/dist-packages (from wsproto->simple-websocket>=0.10.0->python-engineio) (0.16.0)
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+Installing dependencies for LED Matrix Web Interface V2...
+flask is already installed
+Trying to install python3-flask-socketio via apt...
+Successfully installed python3-flask-socketio via apt
+PIL is already installed
+socketio is already installed
+Trying to install python3-eventlet via apt...
+Successfully installed python3-eventlet via apt
+freetype is already installed
+psutil is already installed
+werkzeug is already installed
+numpy is already installed
+requests is already installed
+Trying to install python3-dateutil via apt...
+Successfully installed python3-dateutil via apt
+pytz is already installed
+geopy is already installed
+unidecode is already installed
+websockets is already installed
+Trying to install python3-websocket-client via apt...
+Failed to install websocket-client via apt, will try pip
+Installing websocket-client via pip...
+Successfully installed websocket-client via pip
+Installing timezonefinder==6.2.0 via pip...
+Successfully installed timezonefinder==6.2.0 via pip
+Installing google-auth-oauthlib==1.0.0 via pip...
+Successfully installed google-auth-oauthlib==1.0.0 via pip
+Installing google-auth-httplib2==0.1.0 via pip...
+Successfully installed google-auth-httplib2==0.1.0 via pip
+Installing google-api-python-client==2.86.0 via pip...
+Successfully installed google-api-python-client==2.86.0 via pip
+Installing spotipy via pip...
+Successfully installed spotipy via pip
+Installing icalevents via pip...
+Successfully installed icalevents via pip
+Installing python-engineio via pip...
+Successfully installed python-engineio via pip
+Installing rgbmatrix module...
+Warning: rgbmatrix source not found
+
+All dependencies installed successfully!
+✓ Web interface dependencies installed
+
+Step 8: Installing web interface service...
+-------------------------------------------
+ledmatrix-web.service already present; preserving existing configuration and skipping static installer
+
+Step 8.1: Setting systemd unit file permissions...
+-----------------------------------------------
+✓ Systemd unit file permissions set
+
+Step 9: Configuring web interface permissions...
+------------------------------------------------
+Adding user to systemd-journal group...
+Adding user to adm group...
+User ledpi already in adm
+✓ User added to required groups
+
+Step 10: Configuring passwordless sudo access...
+------------------------------------------------
+Creating sudoers configuration...
+Installing/updating sudoers configuration...
+✓ Passwordless sudo access configured
+
+Step 11: Setting proper file ownership...
+----------------------------------------
+Setting project file ownership...
+✓ Config file permissions set
+✓ Secrets file permissions set
+✓ File ownership configured
+
+Step 11.1: Normalizing project file and directory permissions...
+--------------------------------------------------------------
+✓ Project file permissions normalized
+
+Step 12: Sound module configuration...
+-------------------------------------
+Removing potential conflicting services (bluetooth and others)...
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following packages were automatically installed and are no longer required:
+  libpigpio-dev libpigpio1 libpigpiod-if-dev libpigpiod-if1 libpigpiod-if2-1
+  pigpio-tools pigpiod
+Use 'sudo apt autoremove' to remove them.
+The following packages will be REMOVED:
+  bluez bluez-firmware pi-bluetooth pigpio pulseaudio-module-bluetooth
+  triggerhappy
+0 upgraded, 0 newly installed, 6 to remove and 14 not upgraded.
+After this operation, 6,226 kB disk space will be freed.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 131903 files and directories currently installed.)
+Removing pi-bluetooth (0.1.20) ...
+Removing pulseaudio-module-bluetooth (16.1+dfsg1-2+rpt1.1) ...
+Removing bluez (5.66-1+rpt1+deb12u2) ...
+Removing bluez-firmware (1.2-9+rpt3) ...
+Removing pigpio (1.79-1+rpt1) ...
+Removing triggerhappy (0.5.0-1.1+b2) ...
+Processing triggers for dbus (1.14.10-1~deb12u1) ...
+Processing triggers for man-db (2.11.2-2) ...
+✓ Unnecessary services removed (or not present)
+Ensuring snd_bcm2835 is blacklisted in /etc/modprobe.d/blacklist-rgb-matrix.conf...
+Updating initramfs...
+update-initramfs: Generating /boot/initrd.img-6.12.47+rpt-rpi-v8
+'/boot/initrd.img-6.12.47+rpt-rpi-v8' -> '/boot/firmware/initramfs8'
+update-initramfs: Generating /boot/initrd.img-6.12.47+rpt-rpi-2712
+'/boot/initrd.img-6.12.47+rpt-rpi-2712' -> '/boot/firmware/initramfs_2712'
+✓ Sound module configuration applied
+
+Step 13: Applying performance optimizations...
+---------------------------------------------
+Adding isolcpus=3 to /boot/firmware/cmdline.txt...
+Disabling onboard audio in /boot/firmware/config.txt...
+✓ Performance optimizations applied
+
+Step 14: Testing the installation...
+----------------------------------
+Testing sudo access...
+✓ Sudo access test passed
+Testing journal access...
+✓ Journal access test passed
+Checking service status...
+✓ Main LED Matrix service is running
+✓ Web interface service is running
+
+A reboot is recommended to apply kernel and audio changes. Reboot now? (y/N): 
+Rebooting now...
+==========================================
+Installation Complete!
+==========================================
+
+IMPORTANT: For group changes to take effect, you need to:
+1. Log out and log back in to your SSH session, OR
+2. Run: newgrp systemd-journal
+
+After logging back in, you can:
+
+Access the web interface at:
+  http://your-pi-ip:5001
+
+Check service status:
+  sudo systemctl status ledmatrix.service
+  sudo systemctl status ledmatrix-web.service
+
+View logs:
+  journalctl -u ledmatrix.service -f
+  journalctl -u ledmatrix-web.service -f
+
+Control the display:
+  sudo systemctl start ledmatrix.service
+  sudo systemctl stop ledmatrix.service
+
+Enable/disable web interface autostart:
+  Edit config/config.json and set 'web_display_autostart': true
+
+Configuration files:
+  Main config: config/config.json (created from template automatically)
+  Secrets: config/config_secrets.json (created from template automatically)
+  Template: config/config.template.json (reference for new options)
+
+Enjoy your LED Matrix display!

@@ -1,0 +1,170 @@
+{
+  "id": "ledmatrix-leaderboard",
+  "name": "Sports Leaderboard",
+  "version": "1.5.6",
+  "description": "Displays scrolling leaderboards and standings for multiple sports leagues including NFL, NBA, MLB, NCAA Football, NCAA Basketball, and more",
+  "author": "ChuckBuilds",
+  "entry_point": "manager.py",
+  "class_name": "LeaderboardPlugin",
+  "api_version": "1.0.0",
+  "category": "sports",
+  "tags": [
+    "leaderboard",
+    "standings",
+    "rankings",
+    "sports",
+    "nfl",
+    "nba",
+    "mlb",
+    "ncaa",
+    "scrolling"
+  ],
+  "display_modes": [
+    "leaderboard"
+  ],
+  "update_interval": 3600,
+  "dependencies": [
+    "requests",
+    "pillow"
+  ],
+  "config_schema": "config_schema.json",
+  "requirements_file": "requirements.txt",
+  "min_ledmatrix_version": "3.4.0",
+  "versions": [
+    {
+      "version": "1.5.6",
+      "released": "2026-10-03",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Fixes the NFL, NBA, MLB and NHL league logos on the Pi: they named nfl.png etc. while the core ships NFL.png (its lowercase copies went in core 3.3.0), and the Pi's filesystem is case-sensitive, so those leagues drew a blank logo column and warned every rebuild. NCAA women's basketball now uses the core's NCAA basketball badge (it named an ncaaw.png nothing ships). The core has no NCAA baseball logo, so that column stays blank; a missing league logo is now warned about once per path, then logged at debug."
+    },
+    {
+      "version": "1.5.5",
+      "released": "2026-10-02",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "README only: global.loop on overrides scroll_mode one_shot, as the settings form says."
+    },
+    {
+      "version": "1.5.4",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Removed code that nothing called. No change in behaviour."
+    },
+    {
+      "version": "1.5.3",
+      "released": "2026-09-28",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Settings text only: global.loop overrides scroll_mode 'one_shot'."
+    },
+    {
+      "version": "1.5.2",
+      "released": "2026-09-27",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Standings and rankings refresh on update_interval instead of up to a week later. Every read used the core's 'leaderboard' cache strategy, which keeps an entry for 7 days, so while the cache was warm update_interval never caused a fetch. A cached response is now reused only while it is younger than half of update_interval, so each scheduled update fetches. The standings cache key now includes level and season, so changing either fetches that data instead of reusing the old response. Expect one ESPN request per enabled league per update_interval (hourly by default)."
+    },
+    {
+      "version": "1.5.1",
+      "released": "2026-09-16",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "global.dynamic_duration.* settings take effect. The deprecated flat keys global.min_duration, max_duration, duration_buffer and max_display_time carried schema defaults, which core merges into every config, and they always overrode the nested settings: a nested minimum of 20 and maximum of 120 ran as 45 and 600. The flat keys lose their defaults and are hidden from the settings form (still declared, so saved configs keep validating), and each now applies only while its nested setting is at the default, so a nested value you set always wins. A config saved before this still stores the old flat defaults; they no longer override anything. With a league block missing from enabled_sports (a hand-edited config, or a hot reload without the block), the leagues enabled by default now match the settings form: NFL, NBA, MLB, NCAA Football and NHL. The code enabled NFL, NCAA Football and NCAA Men's Hockey instead. The scroll_speed description no longer says pixels per frame: it is pixels per scroll_delay step, so the speed is scroll_speed / scroll_delay pixels per second. Requires LEDMatrix core 3.4.0, as before."
+    },
+    {
+      "version": "1.5.0",
+      "released": "2026-09-15",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "NBA standings are real. NBA was fetched from ESPN's teams endpoint, which carries no records, so every team showed 0-0 in whatever order ESPN listed them; it now uses the standings endpoint like NFL, MLB and NHL. display() no longer fetches: it called update(force=True) on every frame while there was no data, blocking the render loop for up to the 30s request timeout per league during an outage. It now shows the fallback and update() retries, at most every 5 minutes while nothing has been fetched. The fallback message fits the panel instead of running off both edges. update_interval is honoured: the manifest's 3600 used to win over the configured value; get_update_interval() now returns update_interval (the top-level key; the global.update_interval the code read is not in the schema). Web-UI saves apply without a restart (new on_config_change: leagues, appearance, durations and scroll speed). Scroll speed comes only from the core's resolver via global.display.scroll_speed / scroll_delay; the settings nothing read (global.scroll_speed, global.scroll_delay, global.scroll_pixels_per_second, global.target_fps, global.scroll_target_fps, global.scroll_speed_scale, global.scroll_direction, global.enable_scroll_metrics, and the top-level display_duration, where global.display_duration is the one used) are now kept for compatibility and ignored (still shown in the settings form, marked deprecated), so saved configs that carry them stay valid. The unused set_scroll_speed / set_scroll_delay methods are removed. enabled_sports.ncaam_hockey.show_ranking now works (#rank, as for college basketball). README corrected: the per-league examples used a leagues.* shape, conference/division filters and show_rankings that never existed. Requires LEDMatrix core 3.4.0, as before."
+    },
+    {
+      "version": "1.4.0",
+      "released": "2026-09-15",
+      "ledmatrix_min_version": "3.4.0",
+      "notes": "Requires LEDMatrix core 3.4.0 or newer, because the leaderboard uses the new scroll frame pacing. Since #462 (2026-09-07) display() passes frame_hold to display_manager.set_scrolling_state(), an argument core 3.3.x does not have, so on those cores every frame raised TypeError and the leaderboard stayed blank. The manifest still admitted any core from 2.0.0, so the store kept offering it there. The floor is now 3.4.0 (min_ledmatrix_version, versions[0] and compatible_versions), so the store refuses the install on an older core and asks the user to update LEDMatrix first. A copy already installed on a 3.3.x core stays broken until that core is updated. No code change."
+    },
+    {
+      "version": "1.3.7",
+      "released": "2026-09-07",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Validation-sweep fixes; see the PR for the specific defect."
+    },
+    {
+      "released": "2026-09-07",
+      "version": "1.3.6",
+      "changelog": "Resolve scroll speed through the shared resolver and apply the frame hold it reports, so slow speeds move whole pixels",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-09-03",
+      "version": "1.3.4",
+      "changelog": "Render text 1-bit (no anti-aliasing) so glyphs stay crisp on the LED grid",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.3.3",
+      "released": "2026-09-03",
+      "notes": "Documentation. 31 of the 56 settings had no named key, including the whole appearance block and every per-league entry. All 56 are now documented at the paths the schema expects, with global.scroll_speed_scale, global.scroll_direction and global.enable_scroll_metrics marked as not implemented -- they appear nowhere in the plugin and nowhere in the core's scroll helper. Corrects the opening description: each team is drawn as position number, logo and abbreviation, and a record replaces the number only for NCAA football with show_ranking off, so 'rankings, records, and statistics' overstated what reaches the panel. Adds real rendered screenshots.",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "released": "2026-08-12",
+      "version": "1.3.2",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Missing team logos are no longer downloaded from the render path. A network call inside layout construction (display()) could stall the Vegas scroll; the download now happens in update(), and the render path only ever reads local files, picking up a backfilled logo on the next rebuild."
+    },
+    {
+      "released": "2026-08-12",
+      "version": "1.3.1",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Decode and resize each team logo once instead of once per rebuild. Image.open defers the PNG decode to first access, so it landed inside _prepare_logo's convert(), with a LANCZOS resize after it, for every team on every rebuild of files that had not changed. Measured on real assets: 25 logos cost 276ms uncached and 0.3ms warm. This matters because leaderboard scroll content is built on the render thread -- the adapter's capture path needs the shared canvas -- so the cost lands directly on the Vegas scroll. Cached on path plus mtime, so a logo the downloader backfills is picked up rather than served stale, and a missing one is retried rather than remembered as absent."
+    },
+    {
+      "version": "1.3.0",
+      "released": "2026-08-05",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Pixel-perfect rendering: text is drawn with anti-aliasing off and at font sizes snapped to the pixel grid, and logos get hard alpha edges and are fitted inside the panel instead of being scaled to 120% and cropped top and bottom. Layout is now measured and drawn in a single pass so the strip width matches its contents. top_teams accepts 0 to show every team a league returns, and the plugin warns when the list is longer than the display-duration budget will reach. New global.appearance options: pixel_perfect_text, crisp_logos, text_outline, logo_scale, font_size."
+    },
+    {
+      "version": "1.2.3",
+      "released": "2026-07-31",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "released": "2026-07-17",
+      "version": "1.2.2",
+      "ledmatrix_min": "2.0.0",
+      "notes": "Config schema reorganized for a clearer setup experience: fine-tuning fields moved behind the web UI's collapsed Advanced Settings section (x-advanced). UX-only; no fields, defaults, or behavior changed. Also enables the NFL, NBA, MLB, and NHL standings by default so a fresh install shows content immediately (college sports remain opt-in)."
+    },
+    {
+      "released": "2026-05-15",
+      "version": "1.2.1",
+      "ledmatrix_min": "2.0.0"
+    },
+    {
+      "version": "1.2.0",
+      "released": "2026-04-03",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.1.0",
+      "released": "2026-02-17",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.0.6",
+      "released": "2026-02-12",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.0.5",
+      "released": "2025-11-06",
+      "ledmatrix_min_version": "2.0.0"
+    },
+    {
+      "version": "1.0.4",
+      "released": "2025-11-06",
+      "ledmatrix_min_version": "2.0.0"
+    }
+  ],
+  "last_updated": "2026-10-02",
+  "compatible_versions": [
+    ">=3.4.0"
+  ]
+}

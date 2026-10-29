@@ -1,0 +1,482 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Leaderboard Plugin Configuration",
+  "description": "Configuration schema for the Sports Leaderboard plugin",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable or disable the leaderboard plugin"
+    },
+    "display_duration": {
+      "x-advanced": true,
+      "x-display": "hidden",
+      "type": "number",
+      "description": "Deprecated: ignored. Kept for backward compatibility with existing configs. The leaderboard uses global.display_duration.",
+      "title": "Display Duration (deprecated)"
+    },
+    "update_interval": {
+      "x-advanced": true,
+      "type": "integer",
+      "default": 3600,
+      "minimum": 300,
+      "maximum": 86400,
+      "description": "How often to fetch new leaderboard data in seconds"
+    },
+    "global": {
+      "type": "object",
+      "properties": {
+        "display_duration": {
+          "type": "number",
+          "default": 30,
+          "minimum": 10,
+          "maximum": 300,
+          "description": "Duration in seconds to display the leaderboard"
+        },
+        "scroll_speed": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "number",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs. Scroll speed comes from global.display.scroll_speed / scroll_delay.",
+          "title": "Scroll Speed (deprecated)"
+        },
+        "target_fps": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "number",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs.",
+          "title": "Target FPS (deprecated)"
+        },
+        "scroll_speed_scale": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "number",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs.",
+          "title": "Scroll Speed Scale (deprecated)"
+        },
+        "request_timeout": {
+          "x-advanced": true,
+          "type": "integer",
+          "default": 30,
+          "minimum": 5,
+          "maximum": 120,
+          "description": "Request timeout in seconds"
+        },
+        "dynamic_duration": {
+          "type": "object",
+          "description": "Dynamic duration settings for synchronising display time with content width",
+          "default": {
+            "enabled": true,
+            "min_duration_seconds": 45,
+            "max_duration_seconds": 600,
+            "buffer_ratio": 0.1,
+            "controller_cap_seconds": 600
+          },
+          "properties": {
+            "enabled": {
+              "x-advanced": true,
+              "type": "boolean",
+              "default": true,
+              "description": "Enable dynamic duration based on content width"
+            },
+            "min_duration_seconds": {
+              "x-advanced": true,
+              "type": "integer",
+              "default": 45,
+              "minimum": 10,
+              "maximum": 300,
+              "description": "Minimum display duration when dynamic duration is enabled"
+            },
+            "max_duration_seconds": {
+              "x-advanced": true,
+              "type": "integer",
+              "default": 600,
+              "minimum": 30,
+              "maximum": 1200,
+              "description": "Maximum display duration when dynamic duration is enabled"
+            },
+            "buffer_ratio": {
+              "x-advanced": true,
+              "type": "number",
+              "default": 0.1,
+              "minimum": 0.01,
+              "maximum": 1.0,
+              "description": "Extra buffer applied to the calculated duration (percentage expressed as 0-1)"
+            },
+            "controller_cap_seconds": {
+              "x-advanced": true,
+              "type": "integer",
+              "default": 600,
+              "minimum": 60,
+              "maximum": 1800,
+              "description": "Failsafe cap for the display controller when dynamic duration is enabled"
+            }
+          },
+          "additionalProperties": false
+        },
+        "min_duration": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 300,
+          "title": "Min Duration (deprecated)",
+          "description": "Deprecated: use dynamic_duration.min_duration_seconds. Kept for backward compatibility with existing configs; applies only while dynamic_duration.min_duration_seconds is at its default."
+        },
+        "max_duration": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "integer",
+          "minimum": 30,
+          "maximum": 1200,
+          "title": "Max Duration (deprecated)",
+          "description": "Deprecated: use dynamic_duration.max_duration_seconds. Kept for backward compatibility with existing configs; applies only while dynamic_duration.max_duration_seconds is at its default."
+        },
+        "duration_buffer": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1.0,
+          "title": "Duration Buffer (deprecated)",
+          "description": "Deprecated: use dynamic_duration.buffer_ratio. Kept for backward compatibility with existing configs; applies only while dynamic_duration.buffer_ratio is at its default."
+        },
+        "max_display_time": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 1800,
+          "title": "Max Display Time (deprecated)",
+          "description": "Deprecated: use dynamic_duration.controller_cap_seconds. Kept for backward compatibility with existing configs; applies only while dynamic_duration.controller_cap_seconds is at its default."
+        },
+        "scroll_pixels_per_second": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "number",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs. Scroll speed comes from global.display.scroll_speed / scroll_delay.",
+          "title": "Scroll Pixels Per Second (deprecated)"
+        },
+        "display": {
+          "type": "object",
+          "description": "Display and scrolling settings",
+          "properties": {
+            "scroll_speed": {
+              "x-advanced": true,
+              "type": "number",
+              "description": "Pixels moved per scroll step. With scroll_delay it sets the speed: scroll_speed / scroll_delay pixels per second (100 by default), snapped to the nearest speed the panel can move in whole pixels",
+              "minimum": 0.5,
+              "maximum": 5.0,
+              "default": 1.0
+            },
+            "scroll_delay": {
+              "x-advanced": true,
+              "type": "number",
+              "description": "Delay between scroll steps in seconds",
+              "minimum": 0.001,
+              "maximum": 0.1,
+              "default": 0.01
+            }
+          },
+          "additionalProperties": false
+        },
+        "scroll_target_fps": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "number",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs.",
+          "title": "Scroll Target FPS (deprecated)"
+        },
+        "scroll_mode": {
+          "x-advanced": true,
+          "type": "string",
+          "enum": [
+            "one_shot",
+            "continuous"
+          ],
+          "default": "one_shot",
+          "description": "Scrolling mode"
+        },
+        "scroll_direction": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "string",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs.",
+          "title": "Scroll Direction (deprecated)"
+        },
+        "enable_scroll_metrics": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "boolean",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs.",
+          "title": "Enable Scroll Metrics (deprecated)"
+        },
+        "scroll_delay": {
+          "x-advanced": true,
+          "x-display": "hidden",
+          "type": "number",
+          "description": "Deprecated: ignored. Kept for backward compatibility with existing configs. Scroll speed comes from global.display.scroll_speed / scroll_delay.",
+          "title": "Scroll Delay (deprecated)"
+        },
+        "loop": {
+          "x-advanced": true,
+          "type": "boolean",
+          "default": false,
+          "description": "Loop the leaderboard continuously. On, this overrides scroll_mode 'one_shot'; scroll_mode 'continuous' loops whatever this is set to."
+        },
+        "appearance": {
+          "type": "object",
+          "description": "Pixel-perfect rendering options for text and logos",
+          "properties": {
+            "pixel_perfect_text": {
+              "type": "boolean",
+              "default": true,
+              "description": "Render text with hard pixel edges. Disable only if you prefer the older anti-aliased (softer, blurrier) look"
+            },
+            "crisp_logos": {
+              "type": "boolean",
+              "default": true,
+              "description": "Give logos hard edges instead of a ring of half-lit pixels"
+            },
+            "text_outline": {
+              "x-advanced": true,
+              "type": "boolean",
+              "default": true,
+              "description": "Draw a black outline around text so it stays readable over logos"
+            },
+            "logo_scale": {
+              "x-advanced": true,
+              "type": "number",
+              "default": 1.0,
+              "minimum": 0.5,
+              "maximum": 1.5,
+              "description": "Logo height as a fraction of the panel height. 1.0 fits the panel exactly; above 1.0 crops the top and bottom of every logo"
+            },
+            "font_size": {
+              "x-advanced": true,
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 32,
+              "description": "Font size in pixels. 0 picks a size that suits the panel height. Values are snapped to the font's pixel grid (multiples of 8 for Press Start 2P) to keep text sharp"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "enabled_sports": {
+      "type": "object",
+      "properties": {
+        "nfl": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable NFL standings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 0,
+              "maximum": 32,
+              "description": "Number of top NFL teams to display. 0 shows every team the standings return (up to 32). Long lists need a matching display duration - see the README"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nba": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable NBA standings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 0,
+              "maximum": 30,
+              "description": "Number of top NBA teams to display. 0 shows every team the standings return (up to 30). Long lists need a matching display duration - see the README"
+            }
+          },
+          "additionalProperties": false
+        },
+        "mlb": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable MLB standings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 0,
+              "maximum": 30,
+              "description": "Number of top MLB teams to display. 0 shows every team the standings return (up to 30). Long lists need a matching display duration - see the README"
+            }
+          },
+          "additionalProperties": false
+        },
+        "ncaa_fb": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable NCAA Football rankings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 25,
+              "minimum": 0,
+              "maximum": 130,
+              "description": "Number of top NCAA Football teams to display. 0 shows every team the standings return (up to 130). Long lists need a matching display duration - see the README"
+            },
+            "show_ranking": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show NCAA Football rankings instead of standings"
+            }
+          },
+          "additionalProperties": false
+        },
+        "nhl": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true,
+              "description": "Enable NHL standings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 0,
+              "maximum": 32,
+              "description": "Number of top NHL teams to display. 0 shows every team the standings return (up to 32). Long lists need a matching display duration - see the README"
+            }
+          },
+          "additionalProperties": false
+        },
+        "ncaam_basketball": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable NCAA Men's Basketball rankings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 25,
+              "minimum": 0,
+              "maximum": 350,
+              "description": "Number of top NCAA Men's Basketball teams to display. 0 shows every team the standings return (up to 350). Long lists need a matching display duration - see the README"
+            },
+            "show_ranking": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show rankings/seeds instead of sequential numbering. During March Madness, automatically shows tournament seeds."
+            }
+          },
+          "additionalProperties": false
+        },
+        "ncaam_hockey": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable NCAA Men's Hockey rankings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 0,
+              "maximum": 60,
+              "description": "Number of top NCAA Men's Hockey teams to display. 0 shows every team the standings return (up to 60). Long lists need a matching display duration - see the README"
+            },
+            "show_ranking": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show NCAA Men's Hockey rankings instead of standings"
+            }
+          },
+          "additionalProperties": false
+        },
+        "ncaaw_basketball": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable NCAA Women's Basketball rankings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 25,
+              "minimum": 0,
+              "maximum": 350,
+              "description": "Number of top NCAA Women's Basketball teams to display. 0 shows every team the standings return (up to 350). Long lists need a matching display duration - see the README"
+            },
+            "show_ranking": {
+              "type": "boolean",
+              "default": true,
+              "description": "Show rankings/seeds instead of sequential numbering. During March Madness, automatically shows tournament seeds."
+            }
+          },
+          "additionalProperties": false
+        },
+        "ncaa_baseball": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false,
+              "description": "Enable NCAA Baseball standings"
+            },
+            "top_teams": {
+              "type": "integer",
+              "default": 25,
+              "minimum": 0,
+              "maximum": 350,
+              "description": "Number of top NCAA Baseball teams to display. 0 shows every team the standings return (up to 350). Long lists need a matching display duration - see the README"
+            },
+            "season": {
+              "x-advanced": true,
+              "type": "string",
+              "description": "Season identifier (e.g. '2026'). Omit to use the current ESPN season."
+            },
+            "level": {
+              "x-advanced": true,
+              "type": "integer",
+              "default": 1,
+              "minimum": 1,
+              "maximum": 3,
+              "description": "Competition level (1 = Division I, 2 = Division II, 3 = Division III)"
+            },
+            "sort": {
+              "x-advanced": true,
+              "type": "string",
+              "default": "winpercent:desc,gamesbehind:asc",
+              "description": "Sort key and order for standings"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "enabled"
+  ]
+}

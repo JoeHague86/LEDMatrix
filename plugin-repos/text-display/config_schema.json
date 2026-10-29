@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Text Display Plugin Configuration",
+  "description": "Configuration schema for the Text Display plugin - displays custom scrolling or static text messages",
+  "type": "object",
+  "properties": {
+    "enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable or disable the text display plugin"
+    },
+    "display_duration": {
+      "type": "number",
+      "default": 10,
+      "minimum": 1,
+      "maximum": 300,
+      "description": "How long to display the text in seconds (for non-scrolling or one complete scroll cycle)"
+    },
+    "update_interval": {
+      "type": "integer",
+      "x-advanced": true,
+      "default": 60,
+      "minimum": 1,
+      "description": "How often to refresh the text display in seconds"
+    },
+    "text": {
+      "type": "string",
+      "default": "Subscribe to ChuckBuilds",
+      "description": "The text message to display on the LED matrix"
+    },
+    "font_mode": {
+      "type": "string",
+      "enum": ["manual", "auto"],
+      "default": "manual",
+      "description": "Font sizing mode. 'manual' uses font_path/font_size as configured. 'auto' picks the largest crisp font that fits the display: static text is sized to fit the panel, scrolling text is sized to the panel height."
+    },
+    "font_path": {
+      "type": "string",
+      "default": "assets/fonts/PressStart2P-Regular.ttf",
+      "description": "Path to font file (TTF or BDF format). Relative to project root or absolute path. Used in manual font mode."
+    },
+    "font_size": {
+      "type": "number",
+      "default": 8,
+      "minimum": 4,
+      "maximum": 32,
+      "description": "Font size in pixels. Used in manual font mode."
+    },
+    "scroll": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable scrolling animation for text. If false, text is displayed statically."
+    },
+    "scroll_speed": {
+      "type": "number",
+      "x-advanced": true,
+      "default": 1,
+      "minimum": 0.1,
+      "maximum": 10,
+      "description": "Pixels moved per scroll step. Speed is scroll_speed / scroll_delay pixels per second (default 1 / 0.01 = 100 px/s), moved to the nearest speed the panel can draw in whole pixels."
+    },
+    "scroll_delay": {
+      "type": "number",
+      "x-advanced": true,
+      "default": 0.01,
+      "minimum": 0.001,
+      "maximum": 0.1,
+      "description": "Seconds per scroll step. Speed is scroll_speed / scroll_delay pixels per second, so a smaller delay scrolls faster."
+    },
+    "target_fps": {
+      "x-advanced": true,
+      "x-display": "hidden",
+      "type": "number",
+      "description": "Deprecated: ignored. Nothing reads it, so it never changed the scroll speed. Kept for backward compatibility with existing configs.",
+      "title": "Target FPS (deprecated)"
+    },
+    "scroll_loop": {
+      "type": "boolean",
+      "x-advanced": true,
+      "default": true,
+      "description": "If true, text loops continuously. If false, scrolls once and stops (one-shot mode)."
+    },
+    "scroll_gap_width": {
+      "type": "number",
+      "x-advanced": true,
+      "default": 32,
+      "minimum": 0,
+      "description": "Gap width in pixels between scroll loops (space between end and start of text when looping)"
+    },
+    "text_color": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      },
+      "minItems": 3,
+      "maxItems": 3,
+      "default": [
+        255,
+        255,
+        255
+      ],
+      "description": "RGB text color [R, G, B]"
+    },
+    "background_color": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 255
+      },
+      "minItems": 3,
+      "maxItems": 3,
+      "default": [
+        0,
+        0,
+        0
+      ],
+      "description": "RGB background color [R, G, B]"
+    }
+  },
+  "required": [
+    "enabled",
+    "text"
+  ],
+  "additionalProperties": false
+}
